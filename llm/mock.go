@@ -10,5 +10,5 @@ func NewMockLLM() *MockLLM {
 }
 
 func (llm *MockLLM) CompleteChat(messages []model.Chat) (string, error) {
-	return `{ "tool": "decide", "args": [ "NOTIFY", "http://example.com" ]}`, nil
+	return `{ "tool": "decide", "args": [ "IGNORE", "http://example.com" ]}`, nil
 }
