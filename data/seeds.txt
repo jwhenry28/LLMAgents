@@ -1,0 +1,2 @@
+http://localhost/example.html
+http://localhost/hackernews.html
