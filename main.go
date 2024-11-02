@@ -1,8 +1,8 @@
 package main
 
-import "hackandpray.com/media-curator/curator"
+import "hackandpray.com/media-curator/curation"
 
 func main() {
-	curator := curator.New()
+	curator := curation.NewCurator()
 	curator.Curate()
 }
