@@ -5,10 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Go",
+            "name": "Debug Media Curator",
             "type": "go",
-            "mode": "auto",
-            "program": "${workspaceFolder}/media"
+            "request": "launch",
+            "mode": "exec",
+            "console": "integratedTerminal",
+            "program": "${workspaceRoot}/media",
+            "preLaunchTask": "go: build (debug)"
         }
     ],
 

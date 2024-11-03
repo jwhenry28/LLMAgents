@@ -1,8 +1,11 @@
 package curation
 
 import (
+	"fmt"
 	"strings"
 
+	"hackandpray.com/media-curator/llm"
+	"hackandpray.com/media-curator/model"
 	"hackandpray.com/media-curator/utils"
 )
 
@@ -51,8 +54,21 @@ func (c *Curator) getOrCreateScraper(seed string) *utils.Scraper {
 
 func (c *Curator) runLLMSession(seed string) {
 	scraper := c.getOrCreateScraper(seed)
-	conversation := NewConversation(seed, c.getDescription(), scraper.InnerText)
+	conversation := NewConversation(llm.NewHuman(), c.initialMessages(seed, scraper.InnerText))
 	conversation.RunConversation(seed)
+}
+
+func (c *Curator) initialMessages(seed, seedHTML string) []model.Chat {
+	return []model.Chat{
+		{
+			Role:    "system",
+			Content: fmt.Sprintf(utils.SYSTEM_PROMPT, c.getDescription()),
+		},
+		{
+			Role:    "user",
+			Content: fmt.Sprintf(utils.URL_PROMPT, seed, seedHTML),
+		},
+	}
 }
 
 func (c *Curator) getDescription() string {
