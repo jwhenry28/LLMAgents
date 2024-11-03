@@ -2,10 +2,12 @@ package curation
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"hackandpray.com/media-curator/llm"
 	"hackandpray.com/media-curator/model"
+	"hackandpray.com/media-curator/tools"
 	"hackandpray.com/media-curator/utils"
 )
 
@@ -47,7 +49,12 @@ func (c *Curator) loadSeeds() {
 func (c *Curator) loadScrapers() {
 	c.scrapers = make(map[string]*utils.Scraper)
 	for _, seed := range c.seeds {
-		c.scrapers[seed] = utils.NewScraper(seed)
+		scraper, err := utils.NewScraper(seed)
+		if err != nil {
+			slog.Warn("Error creating seed scraper", "error", err)
+			continue
+		}
+		c.scrapers[seed] = scraper
 	}
 }
 
@@ -59,35 +66,52 @@ func (c *Curator) Curate() {
 }
 
 func (c *Curator) scrapeSeed(seed string) {
-	scraper := c.getOrCreateScraper(seed)
+	scraper, err := c.getOrCreateScraper(seed)
+	if err != nil {
+		return
+	}
 	scraper.Scrape()
 }
 
-func (c *Curator) getOrCreateScraper(seed string) *utils.Scraper {
+func (c *Curator) getOrCreateScraper(seed string) (*utils.Scraper, error) {
 	scraper, ok := c.scrapers[seed]
+	var err error = nil
 	if !ok {
-		scraper = utils.NewScraper(seed)
+		scraper, err = utils.NewScraper(seed)
+		if err == nil {
+			c.scrapers[seed] = scraper
+		}
 	}
 
-	return scraper
+	return scraper, err
 }
 
 func (c *Curator) runLLMSession(seed string) {
-	scraper := c.getOrCreateScraper(seed)
-	messages := c.initialMessages(seed, scraper.InnerText)
+	scraper, err := c.getOrCreateScraper(seed)
+	if err != nil {
+		slog.Error("Error getting scraper", "error", err)
+		return
+	}
+
+	messages := c.initialMessages(scraper)
 	conversation := NewConversation(c.llm, messages)
 	conversation.RunConversation(seed)
 }
 
-func (c *Curator) initialMessages(seed, seedHTML string) []model.Chat {
+func (c *Curator) initialMessages(scraper *utils.Scraper) []model.Chat {
 	return []model.Chat{
 		{
-			Role:    "system",
-			Content: fmt.Sprintf(utils.SYSTEM_PROMPT, c.getDescription()),
+			Role: "system",
+			Content: fmt.Sprintf(
+				utils.SYSTEM_PROMPT,
+				c.getDescription(),
+				tools.NewDecide(model.ToolInput{}).Help(),
+				tools.NewHelp(model.ToolInput{Name: "help", Args: []string{}}).Invoke(),
+			),
 		},
 		{
 			Role:    "user",
-			Content: fmt.Sprintf(utils.CONTENT_PROMPT, seed, seedHTML),
+			Content: fmt.Sprintf(utils.CONTENT_PROMPT, scraper.URL, scraper.GetAnchorString(), scraper.InnerText),
 		},
 	}
 }

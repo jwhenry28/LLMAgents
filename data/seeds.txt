@@ -1,2 +1,2 @@
 https://example.com
-https://tldrsec.com/p/tldr-sec-253
+https://news.ycombinator.com

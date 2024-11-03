@@ -13,17 +13,17 @@ Here is a description of the client's interests/goals:
 %s
 
 When you have finished review the URL and text, make a decision by returning a JSON object like so:
-{ "tool": "decide", "args": [ <decision>, <url> ]}
-usage: { "tool": "decide", "args": [ <decision>, <url> ]}
-args:
-- url: The URL you are making a decision about
-- decision: Your decision. Must be one of the following:
-	- IGNORE: Choose this option if you do not think your client will be interested in reading this URL today.
-	- NOTIFY: Choose this option if you would like to forward this URL to your client
+%s
 
-Please respond in JSON format. Do not include any other text.
+Here is a list of all the tools you have available:
+%s
+
+Please respond in raw JSON format. Do not send any other text, including a markdown JSON code block.
 `
 
 const CONTENT_PROMPT = `Content URL: %s
+Anchors:
+%s
+
 Content:
 %s`

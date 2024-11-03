@@ -1,8 +1,6 @@
 package tools
 
 import (
-	"log/slog"
-
 	"golang.org/x/exp/slices"
 	"hackandpray.com/media-curator/model"
 )
@@ -13,22 +11,18 @@ type Decide struct {
 }
 
 func NewDecide(input model.ToolInput) Tool {
-	return Decide{
-		AllowedArgs: []string{"NOTIFY", "IGNORE"},
-		Base: Base{Input: input},
-	}
-}
-
-func (task Decide) Help() string {
-	help := `
-decide: issues a final decision on the specified URL.
-usage: { "tool": "decide", "args": [ <decision>, <url> ]}
+	brief := "decide: issues a final decision on the specified URL."
+	usage := `usage: { "tool": "decide", "args": [ <decision>, <url>, <justification> ]}
 args:
 - url: The URL you are making a decision about
 - decision: Your decision. Must be one of the following:
 	- IGNORE: Choose this option if you do not think your client will be interested in reading this URL today.
-	- NOTIFY: Choose this option if you would like to forward this URL to your client`
-	return help
+	- NOTIFY: Choose this option if you would like to forward this URL to your client
+- justification: (optional) A short explanation for your decision`
+	return Decide{
+		AllowedArgs: []string{"NOTIFY", "IGNORE"},
+		Base:        Base{Input: input, BriefText: brief, UsageText: usage},
+	}
 }
 
 func (task Decide) Match() bool {
@@ -38,10 +32,10 @@ func (task Decide) Match() bool {
 func (task Decide) Invoke() string {
 	args := task.Input.Args
 	if args[0] == "NOTIFY" {
-		slog.Info("Sending notification for url", "url", args[1])
 		return "notified"
-	} else {
-		slog.Info("Ignoring url", "url", args[1])
+	} else if args[0] == "IGNORE" {
 		return "ignored"
 	}
+
+	return "unknown decision"
 }

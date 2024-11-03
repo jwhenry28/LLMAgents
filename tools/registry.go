@@ -7,6 +7,7 @@ import (
 )
 
 type Tool interface {
+	Brief() string
 	Help() string
 	Match() bool
 	Invoke() string
@@ -15,6 +16,7 @@ type Tool interface {
 var Registry = map[string]func(model.ToolInput) Tool{
 	"help":   NewHelp,
 	"decide": NewDecide,
+	"fetch":  NewFetch,
 }
 
 func RunTool(input model.ToolInput) string {

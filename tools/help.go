@@ -9,18 +9,13 @@ type Help struct {
 }
 
 func NewHelp(input model.ToolInput) Tool {
-	return Help{
-		Base: Base{Input: input},
-	}
-}
-
-func (task Help) Help() string {
-	help := `
-help: returns information about supported tools. If no arguments are supplied, returns a list of all tool names. If a tool name is supplied as an argument, retrieved specific information about that tool.
-usage: { "tool": "help", "args": [ <tool-name> ]}
+	brief := "help: returns information about supported tools. If no arguments are supplied, returns a list of all tool names. If a tool name is supplied as an argument, retrieved specific information about that tool."
+	usage := `usage: { "tool": "help", "args": [ <tool-name> ]}
 args: 
 - tool-name: optional argument. if included, this specifies one tool to learn more about`
-	return help
+	return Help{
+		Base: Base{Input: input, BriefText: brief, UsageText: usage},
+	}
 }
 
 func (task Help) Match() bool {
@@ -42,7 +37,7 @@ func (task Help) Invoke() string {
 func getToolList() string {
 	output := ""
 	for _, constructor := range Registry {
-		output += constructor(model.ToolInput{}).Help() + "\n"
+		output += " - " + constructor(model.ToolInput{}).Brief() + "\n"
 	}
 
 	return output

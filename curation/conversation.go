@@ -21,8 +21,7 @@ func NewConversation(convoModel llm.LLM, initMessages []model.Chat) *Conversatio
 	}
 
 	for _, message := range c.messages {
-		fmt.Println(message)
-		fmt.Println("------------------------------------------------------------------")
+		message.Print()
 	}
 
 	return &c
@@ -47,10 +46,8 @@ func (c *Conversation) RunConversation(seed string) {
 		c.messages = append(c.messages, model.NewChat("assistant", response))
 		c.messages = append(c.messages, model.NewChat("user", output))
 
-		fmt.Println(c.messages[len(c.messages)-2])
-		fmt.Println("------------------------------------------------------------------")
-		fmt.Println(c.messages[len(c.messages)-1])
-		fmt.Println("------------------------------------------------------------------")
+		c.messages[len(c.messages)-2].Print()
+		c.messages[len(c.messages)-1].Print()
 
 		if c.isOver() {
 			break

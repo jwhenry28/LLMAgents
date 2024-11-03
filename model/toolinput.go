@@ -12,3 +12,11 @@ func ToolInputFromJSON(response string) (ToolInput, error) {
 	err := json.Unmarshal([]byte(response), &input)
 	return input, err
 }
+
+func (t *ToolInput) AsString() string {
+	output := t.Name
+	for _, arg := range t.Args {
+		output += " " + arg
+	}
+	return output
+}
