@@ -16,9 +16,12 @@ func NewHuman() *Human {
 	return &Human{}
 }
 
-func (llm *Human) CompleteChat(_ []model.Chat) (string, error) {
+func (llm *Human) CompleteChat(messages []model.Chat) (string, error) {
 	tool := ""
 	args := []string{}
+
+	fmt.Println(messages[len(messages)-2])
+	fmt.Println(messages[len(messages)-1])
 
 	fmt.Print("Enter tool and args (space separated): ")
 	scanner := bufio.NewScanner(os.Stdin)

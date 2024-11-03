@@ -11,58 +11,67 @@ import (
 
 type Conversation struct {
 	llm      llm.LLM
-	ongoing  bool
 	messages []model.Chat
 }
 
 func NewConversation(convoModel llm.LLM, initMessages []model.Chat) *Conversation {
 	c := Conversation{
 		llm:      convoModel,
-		ongoing:  false,
 		messages: initMessages,
 	}
 
-	for _, message := range initMessages {
+	for _, message := range c.messages {
 		fmt.Println(message)
+		fmt.Println("------------------------------------------------------------------")
 	}
 
 	return &c
 }
 
 func (c *Conversation) RunConversation(seed string) {
-	c.ongoing = true
-	for c.ongoing {
+	for {
 		response, err := c.generateModelResponse()
 		if err != nil {
+			slog.Error("LLM session failed", "err", err)
 			break
 		}
 
-		responseChat := model.NewChat("assistant", response)
-		fmt.Println(responseChat)
-
 		input, err := model.ToolInputFromJSON(response)
-		c.ongoing = !c.isOver(input, err)
+		output := ""
+		if err != nil {
+			output = fmt.Sprintf("error: %s", err)
+		} else {
+			output = tools.RunTool(input)
+		}
 
-		output := tools.RunTool(input)
+		c.messages = append(c.messages, model.NewChat("assistant", response))
+		c.messages = append(c.messages, model.NewChat("user", output))
 
-		outputChat := model.NewChat("user", output)
-		fmt.Println(outputChat)
+		fmt.Println(c.messages[len(c.messages)-2])
+		fmt.Println("------------------------------------------------------------------")
+		fmt.Println(c.messages[len(c.messages)-1])
+		fmt.Println("------------------------------------------------------------------")
 
-		c.messages = append(c.messages, responseChat)
-		c.messages = append(c.messages, outputChat)
+		if c.isOver() {
+			break
+		}
 	}
 }
 
 func (c *Conversation) generateModelResponse() (string, error) {
 	raw, err := c.llm.CompleteChat(c.messages)
 	if err != nil {
-		slog.Error("LLM session failed", "err", err)
 		raw = ""
 	}
 
 	return raw, err
 }
 
-func (c *Conversation) isOver(selectedTool model.ToolInput, previousError error) bool {
-	return selectedTool.Name == "decide" || previousError != nil
+func (c *Conversation) isOver() bool {
+	modelResponse := c.messages[len(c.messages)-2]
+	selectedTool, _ := model.ToolInputFromJSON(modelResponse.Content)
+
+	toolOutput := c.messages[len(c.messages)-1]
+
+	return selectedTool.Name == "decide" && (toolOutput.Content == "notified" || toolOutput.Content == "ignored")
 }

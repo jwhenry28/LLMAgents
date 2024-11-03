@@ -9,25 +9,45 @@ import (
 	"hackandpray.com/media-curator/utils"
 )
 
+const (
+	SEEDS_FILE       = "data/seeds.txt"
+	DESCRIPTION_FILE = "data/description.txt"
+)
+
 type Curator struct {
 	fm       utils.FileManager
 	seeds    []string
-	scrapers map[string]utils.Scraper
+	scrapers map[string]*utils.Scraper
+	llm      llm.LLM
 }
 
-func NewCurator() *Curator {
-	c := Curator{}
-	c.initialize()
+func NewCurator(llm llm.LLM) *Curator {
+	c := Curator{
+		fm:  utils.NewFileManager(),
+		llm: llm,
+	}
+
+	c.loadSeeds()
+	c.loadScrapers()
 	return &c
 }
 
-func (c *Curator) initialize() {
-	c.fm = utils.NewFileManager()
-	c.seeds = strings.Split(c.fm.Read("data/seeds.txt"), "\n")
-	c.scrapers = make(map[string]utils.Scraper)
+func (c *Curator) loadSeeds() {
+	lines := strings.Split(c.fm.Read(SEEDS_FILE), "\n")
+	seeds := []string{}
+	for _, url := range lines {
+		if strings.TrimSpace(url) != "" {
+			seeds = append(seeds, url)
+		}
+	}
 
-	for _, url := range c.seeds {
-		c.scrapers[url] = *utils.NewScraper(url)
+	c.seeds = seeds
+}
+
+func (c *Curator) loadScrapers() {
+	c.scrapers = make(map[string]*utils.Scraper)
+	for _, seed := range c.seeds {
+		c.scrapers[seed] = utils.NewScraper(seed)
 	}
 }
 
@@ -46,15 +66,16 @@ func (c *Curator) scrapeSeed(seed string) {
 func (c *Curator) getOrCreateScraper(seed string) *utils.Scraper {
 	scraper, ok := c.scrapers[seed]
 	if !ok {
-		scraper = *utils.NewScraper(seed)
+		scraper = utils.NewScraper(seed)
 	}
 
-	return &scraper
+	return scraper
 }
 
 func (c *Curator) runLLMSession(seed string) {
 	scraper := c.getOrCreateScraper(seed)
-	conversation := NewConversation(llm.NewHuman(), c.initialMessages(seed, scraper.InnerText))
+	messages := c.initialMessages(seed, scraper.InnerText)
+	conversation := NewConversation(c.llm, messages)
 	conversation.RunConversation(seed)
 }
 
@@ -66,11 +87,11 @@ func (c *Curator) initialMessages(seed, seedHTML string) []model.Chat {
 		},
 		{
 			Role:    "user",
-			Content: fmt.Sprintf(utils.URL_PROMPT, seed, seedHTML),
+			Content: fmt.Sprintf(utils.CONTENT_PROMPT, seed, seedHTML),
 		},
 	}
 }
 
 func (c *Curator) getDescription() string {
-	return c.fm.Read("data/description.txt")
+	return c.fm.Read(DESCRIPTION_FILE)
 }

@@ -39,9 +39,9 @@ func (task Decide) Invoke() string {
 	args := task.Input.Args
 	if args[0] == "NOTIFY" {
 		slog.Info("Sending notification for url", "url", args[1])
-	} else if args[0] == "IGNORE" {
+		return "notified"
+	} else {
 		slog.Info("Ignoring url", "url", args[1])
+		return "ignored"
 	}
-
-	return ""
 }

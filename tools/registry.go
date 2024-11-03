@@ -20,7 +20,7 @@ var Registry = map[string]func(model.ToolInput) Tool{
 func RunTool(input model.ToolInput) string {
 	constructor, ok := Registry[input.Name]
 	if !ok {
-		return fmt.Sprintf("unknown tool: %s. use 'help' tool to view supported tools.", input.Name)
+		return fmt.Sprintf("unknown tool: %s. use 'help' tool to view supported tools", input.Name)
 	}
 
 	tool := constructor(input)

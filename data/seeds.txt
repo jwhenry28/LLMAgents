@@ -1,1 +1,2 @@
-http://localhost/example.html
+https://example.com
+https://tldrsec.com/p/tldr-sec-253

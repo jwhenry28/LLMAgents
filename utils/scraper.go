@@ -27,10 +27,6 @@ func NewScraper(url string) *Scraper {
 	return &s
 }
 
-func (s *Scraper) MockScrape() {
-	s.InnerText = "Much todo, much todo..."
-}
-
 func (s *Scraper) Scrape() {
 	s.collector.Visit(s.URL)
 	s.collector.Wait()
@@ -43,7 +39,7 @@ func (s *Scraper) initialize() {
 	s.collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		s.Anchors = append(s.Anchors, model.NewAnchor(e.Text, e.Attr("href")))
 	})
-	s.collector.OnHTML("p,article,code", func(e *colly.HTMLElement) {
+	s.collector.OnHTML("p,article,code,h1,h2,h3,h4,h5,h6", func(e *colly.HTMLElement) {
 		s.InnerText += e.Text
 	})
 	s.collector.OnResponse(func(r *colly.Response) {
