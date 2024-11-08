@@ -1,4 +1,4 @@
-module hackandpray.com/media-curator
+module hackandpray.com/llm-agents
 
 go 1.23
 

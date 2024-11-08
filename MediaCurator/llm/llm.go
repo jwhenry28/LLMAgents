@@ -3,7 +3,7 @@ package llm
 import (
 	"os"
 
-	"hackandpray.com/media-curator/model"
+	"hackandpray.com/llm-agents/model"
 )
 
 type LLM interface {

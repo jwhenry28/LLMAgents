@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"hackandpray.com/media-curator/model"
+	"hackandpray.com/llm-agents/model"
 )
 
 type OpenAI struct {

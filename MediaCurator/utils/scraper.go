@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gocolly/colly"
-	"hackandpray.com/media-curator/model"
+	"hackandpray.com/llm-agents/model"
 )
 
 type Scraper struct {

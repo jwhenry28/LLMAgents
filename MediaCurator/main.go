@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"hackandpray.com/media-curator/curation"
-	"hackandpray.com/media-curator/llm"
+	"hackandpray.com/llm-agents/curation"
+	"hackandpray.com/llm-agents/llm"
 )
 
 func loadEnv() error {

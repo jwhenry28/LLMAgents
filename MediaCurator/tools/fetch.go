@@ -3,8 +3,8 @@ package tools
 import (
 	"net/url"
 
-	"hackandpray.com/media-curator/model"
-	"hackandpray.com/media-curator/utils"
+	"hackandpray.com/llm-agents/model"
+	"hackandpray.com/llm-agents/utils"
 )
 
 type Fetch struct {
