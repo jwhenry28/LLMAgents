@@ -12,7 +12,7 @@ type Fetch struct {
 	tools.Base
 }
 
-func NewFetch(input model.ToolInput) Tool {
+func NewFetch(input model.ToolInput) tools.Tool {
 	brief := "fetch: fetches the content of the specified URL."
 	usage := `usage: { "tool": "fetch", "args": [ <url> ]}
 args:

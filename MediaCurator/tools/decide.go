@@ -12,7 +12,7 @@ type Decide struct {
 	tools.Base
 }
 
-func NewDecide(input model.ToolInput) Tool {
+func NewDecide(input model.ToolInput) tools.Tool {
 	brief := "decide: issues a final decision on the specified URL."
 	usage := `usage: { "tool": "decide", "args": [ <decision>, <url>, <justification> ]}
 args:

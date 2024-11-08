@@ -7,7 +7,7 @@ import (
 	"github.com/jwhenry28/LLMAgents/shared/llm"
 	"github.com/jwhenry28/LLMAgents/shared/model"
 
-	"github.com/jwhenry28/LLMAgents/media-curator/tools"
+	"github.com/jwhenry28/LLMAgents/shared/tools"
 )
 
 type Conversation struct {

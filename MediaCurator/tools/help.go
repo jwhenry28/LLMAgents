@@ -9,7 +9,7 @@ type Help struct {
 	tools.Base
 }
 
-func NewHelp(input model.ToolInput) Tool {
+func NewHelp(input model.ToolInput) tools.Tool {
 	brief := "help: returns information about supported tools. If no arguments are supplied, returns a list of all tool names. If a tool name is supplied as an argument, retrieved specific information about that tool."
 	usage := `usage: { "tool": "help", "args": [ <tool-name> ]}
 args: 
@@ -37,7 +37,7 @@ func (task Help) Invoke() string {
 
 func getToolList() string {
 	output := ""
-	for _, constructor := range Registry {
+	for _, constructor := range tools.Registry {
 		output += " - " + constructor(model.ToolInput{}).Brief() + "\n"
 	}
 
@@ -45,7 +45,7 @@ func getToolList() string {
 }
 
 func getToolHelp(toolName string) string {
-	constructor, ok := Registry[toolName]
+	constructor, ok := tools.Registry[toolName]
 	output := ""
 	if !ok {
 		output = "unknown tool: %s. supported tools:\n"

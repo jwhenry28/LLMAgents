@@ -13,10 +13,15 @@ type Tool interface {
 	Invoke() string
 }
 
-var Registry = map[string]func(model.ToolInput) Tool{
-	"help":   NewHelp,
-	"decide": NewDecide,
-	"fetch":  NewFetch,
+var Registry = make(map[string]func(model.ToolInput) Tool)
+
+func RegisterTool(name string, constructor func(model.ToolInput) Tool) error {
+	if _, ok := Registry[name]; ok {
+		return fmt.Errorf("tool already registered: %s", name)
+	}
+
+	Registry[name] = constructor
+	return nil
 }
 
 func RunTool(input model.ToolInput) string {
