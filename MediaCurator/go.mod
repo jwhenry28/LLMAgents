@@ -1,8 +1,12 @@
-module hackandpray.com/media-curator
+module github.com/jwhenry28/LLMAgents/media-curator
 
 go 1.23
 
 toolchain go1.23.2
+
+require github.com/jwhenry28/LLMAgents/shared v0.0.0
+
+replace github.com/jwhenry28/LLMAgents/shared => ../shared
 
 require (
 	github.com/gocolly/colly v1.2.0

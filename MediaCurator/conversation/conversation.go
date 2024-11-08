@@ -1,12 +1,13 @@
-package curation
+package conversation
 
 import (
 	"fmt"
 	"log/slog"
 
-	"hackandpray.com/media-curator/llm"
-	"hackandpray.com/media-curator/model"
-	"hackandpray.com/media-curator/tools"
+	"github.com/jwhenry28/LLMAgents/shared/llm"
+	"github.com/jwhenry28/LLMAgents/shared/model"
+
+	"github.com/jwhenry28/LLMAgents/media-curator/tools"
 )
 
 type Conversation struct {

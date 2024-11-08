@@ -2,12 +2,14 @@ package tools
 
 import (
 	"golang.org/x/exp/slices"
-	"hackandpray.com/media-curator/model"
+
+	"github.com/jwhenry28/LLMAgents/shared/model"
+	"github.com/jwhenry28/LLMAgents/shared/tools"
 )
 
 type Decide struct {
 	AllowedArgs []string
-	Base
+	tools.Base
 }
 
 func NewDecide(input model.ToolInput) Tool {
@@ -21,7 +23,7 @@ args:
 - justification: (optional) A short explanation for your decision`
 	return Decide{
 		AllowedArgs: []string{"NOTIFY", "IGNORE"},
-		Base:        Base{Input: input, BriefText: brief, UsageText: usage},
+		Base:        tools.Base{Input: input, BriefText: brief, UsageText: usage},
 	}
 }
 

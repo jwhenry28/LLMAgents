@@ -1,6 +1,6 @@
 package tools
 
-import "hackandpray.com/media-curator/model"
+import "github.com/jwhenry28/LLMAgents/shared/model"
 
 type Base struct {
 	Input     model.ToolInput

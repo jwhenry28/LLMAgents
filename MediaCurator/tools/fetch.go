@@ -3,12 +3,13 @@ package tools
 import (
 	"net/url"
 
-	"hackandpray.com/media-curator/model"
-	"hackandpray.com/media-curator/utils"
+	"github.com/jwhenry28/LLMAgents/media-curator/utils"
+	"github.com/jwhenry28/LLMAgents/shared/model"
+	"github.com/jwhenry28/LLMAgents/shared/tools"
 )
 
 type Fetch struct {
-	Base
+	tools.Base
 }
 
 func NewFetch(input model.ToolInput) Tool {
@@ -17,7 +18,7 @@ func NewFetch(input model.ToolInput) Tool {
 args:
 - url: The URL you wish to fetch content from. Must start with http or https.`
 
-	return Fetch{Base: Base{Input: input, BriefText: brief, UsageText: usage}}
+	return Fetch{Base: tools.Base{Input: input, BriefText: brief, UsageText: usage}}
 }
 
 func (task Fetch) Match() bool {

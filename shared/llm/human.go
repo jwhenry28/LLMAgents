@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"hackandpray.com/media-curator/model"
+	"github.com/jwhenry28/LLMAgents/shared/model"
 )
 
 type Human struct {

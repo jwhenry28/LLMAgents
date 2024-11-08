@@ -5,10 +5,11 @@ import (
 	"log/slog"
 	"strings"
 
-	"hackandpray.com/media-curator/llm"
-	"hackandpray.com/media-curator/model"
-	"hackandpray.com/media-curator/tools"
-	"hackandpray.com/media-curator/utils"
+	"github.com/jwhenry28/LLMAgents/media-curator/tools"
+	"github.com/jwhenry28/LLMAgents/media-curator/utils"
+	"github.com/jwhenry28/LLMAgents/media-curator/conversation"
+	"github.com/jwhenry28/LLMAgents/shared/llm"
+	"github.com/jwhenry28/LLMAgents/shared/model"
 )
 
 const (
@@ -94,7 +95,7 @@ func (c *Curator) runLLMSession(seed string) {
 	}
 
 	messages := c.initialMessages(scraper)
-	conversation := NewConversation(c.llm, messages)
+	conversation := conversation.NewConversation(c.llm, messages)
 	conversation.RunConversation(seed)
 }
 

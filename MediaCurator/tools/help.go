@@ -1,11 +1,12 @@
 package tools
 
 import (
-	"hackandpray.com/media-curator/model"
+	"github.com/jwhenry28/LLMAgents/shared/model"
+	"github.com/jwhenry28/LLMAgents/shared/tools"
 )
 
 type Help struct {
-	Base
+	tools.Base
 }
 
 func NewHelp(input model.ToolInput) Tool {
@@ -14,7 +15,7 @@ func NewHelp(input model.ToolInput) Tool {
 args: 
 - tool-name: optional argument. if included, this specifies one tool to learn more about`
 	return Help{
-		Base: Base{Input: input, BriefText: brief, UsageText: usage},
+		Base: tools.Base{Input: input, BriefText: brief, UsageText: usage},
 	}
 }
 
