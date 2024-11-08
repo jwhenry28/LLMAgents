@@ -2,7 +2,7 @@ package tools
 
 import (
 	"golang.org/x/exp/slices"
-	"hackandpray.com/llm-agents/model"
+	"hackandpray.com/media-curator/model"
 )
 
 type Decide struct {

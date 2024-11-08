@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"hackandpray.com/llm-agents/llm"
-	"hackandpray.com/llm-agents/model"
-	"hackandpray.com/llm-agents/tools"
+	"hackandpray.com/media-curator/llm"
+	"hackandpray.com/media-curator/model"
+	"hackandpray.com/media-curator/tools"
 )
 
 type Conversation struct {

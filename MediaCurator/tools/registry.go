@@ -3,7 +3,7 @@ package tools
 import (
 	"fmt"
 
-	"hackandpray.com/llm-agents/model"
+	"hackandpray.com/media-curator/model"
 )
 
 type Tool interface {

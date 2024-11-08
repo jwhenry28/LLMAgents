@@ -1,7 +1,7 @@
 package llm
 
 import (
-	"hackandpray.com/llm-agents/model"
+	"hackandpray.com/media-curator/model"
 )
 
 type MockLLM struct {

@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"hackandpray.com/llm-agents/model"
+	"hackandpray.com/media-curator/model"
 )
 
 type Help struct {

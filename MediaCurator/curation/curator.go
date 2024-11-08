@@ -5,10 +5,10 @@ import (
 	"log/slog"
 	"strings"
 
-	"hackandpray.com/llm-agents/llm"
-	"hackandpray.com/llm-agents/model"
-	"hackandpray.com/llm-agents/tools"
-	"hackandpray.com/llm-agents/utils"
+	"hackandpray.com/media-curator/llm"
+	"hackandpray.com/media-curator/model"
+	"hackandpray.com/media-curator/tools"
+	"hackandpray.com/media-curator/utils"
 )
 
 const (

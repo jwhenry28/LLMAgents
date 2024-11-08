@@ -3,8 +3,8 @@ package tools
 import (
 	"net/url"
 
-	"hackandpray.com/llm-agents/model"
-	"hackandpray.com/llm-agents/utils"
+	"hackandpray.com/media-curator/model"
+	"hackandpray.com/media-curator/utils"
 )
 
 type Fetch struct {
@@ -35,7 +35,7 @@ func (task Fetch) Invoke() string {
 	if err != nil {
 		return "error: " + err.Error()
 	}
-	
+
 	scraper.Scrape()
 	return scraper.InnerText
 }

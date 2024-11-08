@@ -1,11 +1,11 @@
 package tools
 
-import "hackandpray.com/llm-agents/model"
+import "hackandpray.com/media-curator/model"
 
 type Base struct {
 	Input     model.ToolInput
 	BriefText string
-	UsageText  string
+	UsageText string
 }
 
 func (task Base) Brief() string {

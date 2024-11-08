@@ -3,7 +3,7 @@ package tools
 import (
 	"testing"
 
-	"hackandpray.com/llm-agents/model"
+	"hackandpray.com/media-curator/model"
 )
 
 func TestDecide(t *testing.T) {

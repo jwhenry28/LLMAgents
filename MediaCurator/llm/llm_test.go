@@ -3,7 +3,7 @@ package llm
 import (
 	"testing"
 
-	"hackandpray.com/llm-agents/model"
+	"hackandpray.com/media-curator/model"
 )
 
 func TestMockLLM(t *testing.T) {
