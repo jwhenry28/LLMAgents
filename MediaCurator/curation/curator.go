@@ -7,7 +7,7 @@ import (
 
 	"github.com/jwhenry28/LLMAgents/media-curator/tools"
 	"github.com/jwhenry28/LLMAgents/media-curator/utils"
-	"github.com/jwhenry28/LLMAgents/media-curator/conversation"
+	"github.com/jwhenry28/LLMAgents/shared/conversation"
 	"github.com/jwhenry28/LLMAgents/shared/llm"
 	"github.com/jwhenry28/LLMAgents/shared/model"
 )
@@ -94,8 +94,17 @@ func (c *Curator) runLLMSession(seed string) {
 		return
 	}
 
+	conversationIsOver := func(c *conversation.Conversation) bool {
+		modelResponse := c.Messages[len(c.Messages)-2]
+		selectedTool, _ := model.ToolInputFromJSON(modelResponse.Content)
+	
+		toolOutput := c.Messages[len(c.Messages)-1]
+	
+		return selectedTool.Name == "decide" && (toolOutput.Content == "notified" || toolOutput.Content == "ignored")
+	}
+
 	messages := c.initialMessages(scraper)
-	conversation := conversation.NewConversation(c.llm, messages)
+	conversation := conversation.NewConversation(c.llm, messages, conversationIsOver)
 	conversation.RunConversation(seed)
 }
 

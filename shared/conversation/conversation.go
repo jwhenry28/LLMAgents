@@ -11,17 +11,20 @@ import (
 )
 
 type Conversation struct {
-	llm      llm.LLM
-	messages []model.Chat
+	llm    llm.LLM
+	isOver func(*Conversation) bool
+
+	Messages []model.Chat
 }
 
-func NewConversation(convoModel llm.LLM, initMessages []model.Chat) *Conversation {
+func NewConversation(convoModel llm.LLM, initMessages []model.Chat, isOver func(*Conversation) bool) *Conversation {
 	c := Conversation{
 		llm:      convoModel,
-		messages: initMessages,
+		isOver:   isOver,
+		Messages: initMessages,
 	}
 
-	for _, message := range c.messages {
+	for _, message := range c.Messages {
 		message.Print()
 	}
 
@@ -44,32 +47,23 @@ func (c *Conversation) RunConversation(seed string) {
 			output = tools.RunTool(input)
 		}
 
-		c.messages = append(c.messages, model.NewChat("assistant", response))
-		c.messages = append(c.messages, model.NewChat("user", output))
+		c.Messages = append(c.Messages, model.NewChat("assistant", response))
+		c.Messages = append(c.Messages, model.NewChat("user", output))
 
-		c.messages[len(c.messages)-2].Print()
-		c.messages[len(c.messages)-1].Print()
+		c.Messages[len(c.Messages)-2].Print()
+		c.Messages[len(c.Messages)-1].Print()
 
-		if c.isOver() {
+		if c.isOver(c) {
 			break
 		}
 	}
 }
 
 func (c *Conversation) generateModelResponse() (string, error) {
-	raw, err := c.llm.CompleteChat(c.messages)
+	raw, err := c.llm.CompleteChat(c.Messages)
 	if err != nil {
 		raw = ""
 	}
 
 	return raw, err
-}
-
-func (c *Conversation) isOver() bool {
-	modelResponse := c.messages[len(c.messages)-2]
-	selectedTool, _ := model.ToolInputFromJSON(modelResponse.Content)
-
-	toolOutput := c.messages[len(c.messages)-1]
-
-	return selectedTool.Name == "decide" && (toolOutput.Content == "notified" || toolOutput.Content == "ignored")
 }
