@@ -5,7 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
+	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/jwhenry28/LLMAgents/shared/model"
 )
@@ -27,8 +31,22 @@ func NewOpenAI(apikey string, model string, temperature int) *OpenAI {
 	}
 }
 
-// TODO: call request in loop N times in case of failure or ratelimiting.
 func (llm *OpenAI) CompleteChat(messages []model.Chat) (string, error) {
+	defaultRetries := 3
+	return llm.completeChat(messages, defaultRetries)
+}
+
+func (llm *OpenAI) completeChat(messages []model.Chat, retries int) (string, error) {
+	response, err := llm.completeChatRequest(messages)
+	if err == nil || retries <= 1 {
+		return response, err
+	}
+
+	slog.Warn("Rate limit exceeded. Retrying...")
+	return llm.completeChat(messages, retries-1)
+}
+
+func (llm *OpenAI) completeChatRequest(messages []model.Chat) (string, error) {
 	endpoint := llm.apiUrl + "/v1/chat/completions"
 
 	requestBody, err := json.Marshal(map[string]interface{}{
@@ -60,6 +78,13 @@ func (llm *OpenAI) CompleteChat(messages []model.Chat) (string, error) {
 		return "", err
 	}
 
+	if resp.StatusCode == http.StatusTooManyRequests {
+		jitter := 1.0
+		duration := llm.getRetryDelay(string(body)) + jitter
+		time.Sleep(time.Duration(duration) * time.Second)
+		return llm.completeChatRequest(messages)
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("API request failed with status code %d: %s", resp.StatusCode, string(body))
 	}
@@ -78,4 +103,14 @@ func (llm *OpenAI) CompleteChat(messages []model.Chat) (string, error) {
 	message := choices[0].(map[string]interface{})["message"].(map[string]interface{})
 
 	return message["content"].(string), nil
+}
+
+func (llm *OpenAI) getRetryDelay(errorResponse string) float64 {
+	re := regexp.MustCompile(`try again in (\d+\.?\d*)s`)
+	matches := re.FindStringSubmatch(errorResponse)
+	if len(matches) > 1 {
+		seconds, _ := strconv.ParseFloat(matches[1], 64)
+		return seconds
+	}
+	return 0.0
 }

@@ -12,6 +12,14 @@
             "console": "integratedTerminal",
             "program": "${workspaceRoot}/media",
             "preLaunchTask": "go: build (debug)"
+        },
+        {
+            "name": "Debug CodingBuddy Tests",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceRoot}/CodingBuddy",
+            "args": ["-test.v"]
         }
     ],
 
