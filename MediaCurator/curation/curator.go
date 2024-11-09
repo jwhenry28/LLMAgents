@@ -5,11 +5,12 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/jwhenry28/LLMAgents/media-curator/tools"
+	local "github.com/jwhenry28/LLMAgents/media-curator/tools"
 	"github.com/jwhenry28/LLMAgents/media-curator/utils"
 	"github.com/jwhenry28/LLMAgents/shared/conversation"
 	"github.com/jwhenry28/LLMAgents/shared/llm"
 	"github.com/jwhenry28/LLMAgents/shared/model"
+	"github.com/jwhenry28/LLMAgents/shared/tools"
 )
 
 const (
@@ -105,7 +106,7 @@ func (c *Curator) runLLMSession(seed string) {
 
 	messages := c.initialMessages(scraper)
 	conversation := conversation.NewConversation(c.llm, messages, conversationIsOver)
-	conversation.RunConversation(seed)
+	conversation.RunConversation()
 }
 
 func (c *Curator) initialMessages(scraper *utils.Scraper) []model.Chat {
@@ -115,7 +116,7 @@ func (c *Curator) initialMessages(scraper *utils.Scraper) []model.Chat {
 			Content: fmt.Sprintf(
 				utils.SYSTEM_PROMPT,
 				c.getDescription(),
-				tools.NewDecide(model.ToolInput{}).Help(),
+				local.NewDecide(model.ToolInput{}).Help(),
 				tools.NewHelp(model.ToolInput{Name: "help", Args: []string{}}).Invoke(),
 			),
 		},

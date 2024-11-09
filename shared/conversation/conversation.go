@@ -31,7 +31,7 @@ func NewConversation(convoModel llm.LLM, initMessages []model.Chat, isOver func(
 	return &c
 }
 
-func (c *Conversation) RunConversation(seed string) {
+func (c *Conversation) RunConversation() {
 	for {
 		response, err := c.generateModelResponse()
 		if err != nil {
