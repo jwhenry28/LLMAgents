@@ -1,24 +1,43 @@
 package tools
 
 import (
+	"fmt"
 	"net/url"
 
-	"github.com/jwhenry28/LLMAgents/media-curator/utils"
+	"github.com/gocolly/colly"
 	"github.com/jwhenry28/LLMAgents/shared/model"
 	"github.com/jwhenry28/LLMAgents/shared/tools"
 )
 
+type scraper struct {
+	collector   *colly.Collector
+	ScrapedText string
+}
+
 type Fetch struct {
+	scraper *scraper
 	tools.Base
 }
 
 func NewFetch(input model.ToolInput) tools.Tool {
-	brief := "fetch: fetches the content of the specified URL."
+	brief := "fetch: issues a GET request to the specified URL and returns the raw contents."
 	usage := `usage: { "tool": "fetch", "args": [ <url> ]}
 args:
 - url: The URL you wish to fetch content from. Must start with http or https.`
 
-	return Fetch{Base: tools.Base{Input: input, BriefText: brief, UsageText: usage}}
+	collector := colly.NewCollector()
+	scraper := &scraper{
+		collector:   collector,
+		ScrapedText: "",
+	}
+	collector.OnHTML("p,article,code,h1,h2,h3,h4,h5,h6", func(e *colly.HTMLElement) {
+		scraper.ScrapedText += e.Text + "\n"
+	})
+	collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
+		scraper.ScrapedText += fmt.Sprintf("<a href=\"%s\">%s</a>\n", e.Attr("href"), e.Text)
+	})
+
+	return Fetch{scraper: scraper, Base: tools.Base{Input: input, BriefText: brief, UsageText: usage}}
 }
 
 func (task Fetch) Match() bool {
@@ -30,13 +49,10 @@ func (task Fetch) Match() bool {
 	return err == nil
 }
 
-// TODO: use common data store with curator.scrapers
 func (task Fetch) Invoke() string {
-	scraper, err := utils.NewScraper(task.Input.Args[0])
-	if err != nil {
-		return "error: " + err.Error()
-	}
+	scraper := task.scraper
+	scraper.collector.Visit(task.Input.Args[0])
+	scraper.collector.Wait()
 
-	scraper.Scrape()
-	return scraper.InnerText
+	return scraper.ScrapedText
 }

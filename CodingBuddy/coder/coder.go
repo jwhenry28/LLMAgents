@@ -70,5 +70,12 @@ func (c *Coder) getUserPrompt() string {
 	{"title": "Anchor tag inner text", "url": "Anchor tag href"}
 
 	Your callback should ignore any links that are not featured articles, such as /jobs, /newcomments, or /submit.
+
+	You may find Gocolly's 'Getting Started' documentation helpful: https://go-colly.org/docs/introduction/start/
+
+	Use the 'fetch' tool to read Gocolly's documentation or to inspect the Hacker News page. I recommend reviewing 
+	both materials before writing any Golang code.
+
+	Please do not submit a program until you have tested it, and it returns the expected output (a list of parsed anchor tags).
 	`
 }

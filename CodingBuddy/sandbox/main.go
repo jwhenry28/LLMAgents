@@ -3,24 +3,34 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gocolly/colly"
 	"log"
-
-	"github.com/gocolly/colly/v2"
 )
 
 func main() {
-	c := colly.NewCollector(
-		colly.AllowedDomains("news.ycombinator.com"),
-	)
+	c := colly.NewCollector()
 
-	articles := []map[string]string{}
+	var articles []map[string]string
 
-	c.OnHTML("tr.athing", func(e *colly.HTMLElement) {
-		title := e.ChildText("td.title > a.storylink")
-		url := e.ChildAttr("td.title > a.storylink", "href")
-		if title != "" && url != "" {
-			articles = append(articles, map[string]string{"title": title, "url": url})
+	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
+		url := e.Attr("href")
+		if url != "newcomments" && url != "jobs" && url != "submit" {
+			if e.DOM.Parent().Is("td.title > a") {
+				article := map[string]string{
+					"title": e.Text,
+					"url":   e.Request.AbsoluteURL(url),
+				}
+				articles = append(articles, article)
+			}
 		}
+	})
+
+	c.OnScraped(func(r *colly.Response) {
+		jsonData, err := json.MarshalIndent(articles, "", "  ")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(string(jsonData))
 	})
 
 	err := c.Visit("https://news.ycombinator.com")
@@ -28,10 +38,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	jsonData, err := json.MarshalIndent(articles, "", "  ")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(string(jsonData))
+	c.Wait()
+	fmt.Println(articles)
 }
