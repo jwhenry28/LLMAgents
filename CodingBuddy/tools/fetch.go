@@ -31,10 +31,20 @@ args:
 		ScrapedText: "",
 	}
 	collector.OnHTML("p,article,code,h1,h2,h3,h4,h5,h6", func(e *colly.HTMLElement) {
-		scraper.ScrapedText += e.Text + "\n"
+		scraper.ScrapedText += e.Text
 	})
 	collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
-		scraper.ScrapedText += fmt.Sprintf("<a href=\"%s\">%s</a>\n", e.Attr("href"), e.Text)
+		dom := e.DOM
+		attributes := dom.Nodes[0].Attr
+		tag := "<a "
+		for i, attribute := range attributes {
+			tag += fmt.Sprintf("%s=\"%s\"", attribute.Key, attribute.Val)
+			if i < len(attributes)-1 {
+				tag += " "
+			}
+		}
+		tag += ">" + e.Text + "</a>\n"
+		scraper.ScrapedText += tag
 	})
 
 	return Fetch{scraper: scraper, Base: tools.Base{Input: input, BriefText: brief, UsageText: usage}}

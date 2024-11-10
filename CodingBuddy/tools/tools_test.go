@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -43,7 +42,7 @@ func (ts *testServer) shutdown() error {
 }
 
 func TestFetch(t *testing.T) {
-	ts := newTestServer()
+	ts := newTestServer() // comment this out and use python http.server if debugging
 	defer ts.shutdown()
 
 	tests := []struct {
@@ -56,13 +55,13 @@ func TestFetch(t *testing.T) {
 			name:     "example.com",
 			args:     []string{"http://localhost:8080/example.html"},
 			wantErr:  false,
-			contains: []string{"Example Domain"},
+			contains: []string{"Example Domain", `<a href="https://www.iana.org/domains/example">More information...</a>`},
 		},
 		{
 			name:     "hackernews",
 			args:     []string{"http://localhost:8080/hackernews.html"},
 			wantErr:  false,
-			contains: []string{"Hacker News", `<a href="https://www.asimov.press/p/mitochondria">Mitochondria Are Alive</a>`, `<a href="https://igorstechnoclub.com/most-common-sqlite-misconception/">SQLite is not a single connection database</a>`, `<a href="https://mtlynch.io/why-i-quit-google/">I quit Google to work for myself (2018)</a>`},
+			contains: []string{"Hacker News", `<a href="https://www.asimov.press/p/mitochondria">Mitochondria Are Alive</a>`, `<a href="https://igorstechnoclub.com/most-common-sqlite-misconception/" rel="nofollow">SQLite is not a single connection database</a>`, `<a href="https://mtlynch.io/why-i-quit-google/">I quit Google to work for myself (2018)</a>`},
 		},
 		{
 			name:     "invalid url",

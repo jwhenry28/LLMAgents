@@ -9,10 +9,10 @@
                 "build",
                 "-gcflags=all=-N -l",
                 "-o",
-                "${workspaceRoot}/media"
+                "${workspaceRoot}/MediaCurator/media"
             ],
             "options": {
-                "cwd": "${workspaceRoot}"
+                "cwd": "${workspaceRoot}/MediaCurator"
             },
         }
     ]

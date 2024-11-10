@@ -81,6 +81,7 @@ func (llm *OpenAI) completeChatRequest(messages []model.Chat) (string, error) {
 	if resp.StatusCode == http.StatusTooManyRequests {
 		jitter := 1.0
 		duration := llm.getRetryDelay(string(body)) + jitter
+		slog.Warn("Rate limit exceeded. Retrying...", "duration", duration)
 		time.Sleep(time.Duration(duration) * time.Second)
 		return llm.completeChatRequest(messages)
 	}

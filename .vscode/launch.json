@@ -10,16 +10,18 @@
             "request": "launch",
             "mode": "exec",
             "console": "integratedTerminal",
-            "program": "${workspaceRoot}/media",
+            "program": "${workspaceRoot}/MediaCurator/media",
+            "cwd": "${workspaceRoot}/MediaCurator",
             "preLaunchTask": "go: build (debug)"
         },
         {
-            "name": "Debug CodingBuddy Tests",
+            "name": "CodingBuddy Tools Tests",
             "type": "go",
             "request": "launch",
             "mode": "test",
-            "program": "${workspaceRoot}/CodingBuddy",
-            "args": ["-test.v"]
+            "cwd": "${workspaceRoot}/CodingBuddy",
+            "program": "${workspaceFolder}/CodingBuddy/tools",
+            "showLog": true
         }
     ],
 
