@@ -1,2 +1,2 @@
-# MediaCurator
-Fun project to use LLMs to pick stuff out of the media feeds
+# LLMAgents
+A repository of my LLM agent side projects.
