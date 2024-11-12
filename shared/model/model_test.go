@@ -163,10 +163,94 @@ func TestNewTextToolInput(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:  "multiline input2",
+			input: "decide\nThis\nis another\nmultiline argument",
+			expected: &TextToolInput{
+				Name: "decide",
+				Args: []string{"This\nis another\nmultiline argument"},
+			},
+			wantErr: false,
+		},
+		{
 			name:     "empty input",
 			input:    "",
 			expected: nil,
 			wantErr:  true,
+		},
+		{
+			name:  "nested quotes with escape",
+			input: `decide "hello \"world\" and 'test quote'"`,
+			expected: &TextToolInput{
+				Name: "decide",
+				Args: []string{`hello "world" and 'test quote'`},
+			},
+			wantErr: false,
+		},
+		{
+			name:  "multiple spaces",
+			input: `decide     "hello     world" 'test quote'`,
+			expected: &TextToolInput{
+				Name: "decide",
+				Args: []string{`hello     world`, `test quote`},
+			},
+			wantErr: false,
+		},
+		{
+			name:  "unbalanced quotes",
+			input: `decide "hello world'`,
+			expected: &TextToolInput{
+				Name: "decide",
+				Args: []string{`hello world'`}, // This should still be treated as a single argument
+			},
+			wantErr: false,
+		},
+		{
+			name:  "empty input with spaces",
+			input: "     ",
+			expected: nil,
+			wantErr:  true,
+		},
+		{
+			name:  "only quotes",
+			input: `'"' "'"`,
+			expected: &TextToolInput{
+				Name: `"`,
+				Args: []string{`'`},
+			},
+			wantErr: false,
+		},
+		{
+			name:  "mixed quotes",
+			input: `decide "hello 'world'"`,
+			expected: &TextToolInput{
+				Name: "decide",
+				Args: []string{`hello 'world'`},
+			},
+			wantErr: false,
+		},
+		{
+			name:  "complex nested quotes",
+			input: `decide "this is a 'complex' example with \"nested quotes\""`,
+			expected: &TextToolInput{
+				Name: "decide",
+				Args: []string{`this is a 'complex' example with "nested quotes"`},
+			},
+			wantErr: false,
+		},
+		{
+			name:  "newline with quotes",
+			input: `decide "this is a 'complex'
+example with
+\"nested quotes\"
+and a newline"`,
+			expected: &TextToolInput{
+				Name: "decide",
+				Args: []string{`this is a 'complex'
+example with
+\"nested quotes\"
+and a newline`},
+			},
+			wantErr: false,
 		},
 	}
 
@@ -178,7 +262,7 @@ func TestNewTextToolInput(t *testing.T) {
 				t.Errorf("NewTextToolInput() error = %v, wantErr %v", err, test.wantErr)
 				return
 			} else if !test.wantErr && !reflect.DeepEqual(got, test.expected) {
-				t.Errorf("Expected\n%s\n\nbut got\n\n%s", test.expected.AsString(), got.AsString())
+				t.Errorf("Expected\n%v\n\nbut got\n\n%v", test.expected.AsString(), got.AsString())
 			}
 		})
 	}
