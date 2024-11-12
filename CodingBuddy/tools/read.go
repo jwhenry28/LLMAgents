@@ -17,7 +17,7 @@ type Read struct {
 
 func NewRead(input model.ToolInput) tools.Tool {
 	brief := "read: reads text from a file."
-	usage := `usage: { "tool": "read", "args": [ <filename> ]}
+	usage := `usage: read <filename>
 args:
 - filename: The name of the file to read`
 	return Read{
@@ -26,11 +26,12 @@ args:
 }
 
 func (task Read) Match() bool {
-	return len(task.Input.Args) >= 1
+	args := task.Input.GetArgs()
+	return len(args) >= 1
 }
 
 func (task Read) Invoke() string {
-	args := task.Input.Args
+	args := task.Input.GetArgs()
 	filename := args[0]
 
 	if strings.HasPrefix(filename, "/") {

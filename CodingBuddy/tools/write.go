@@ -27,11 +27,12 @@ args:
 }
 
 func (task Write) Match() bool {
-	return len(task.Input.Args) >= 2
+	args := task.Input.GetArgs()
+	return len(args) >= 2
 }
 
 func (task Write) Invoke() string {
-	args := task.Input.Args
+	args := task.Input.GetArgs()
 	filename := args[0]
 	text := args[1]
 
@@ -42,8 +43,16 @@ func (task Write) Invoke() string {
 	if strings.Contains(filename, "..") {
 		return "error: cannot use traversal character (..)"
 	}
+	// Create all necessary directories
+	dir := utils.SANDBOX_DIR + "/" + filename
+	if lastSlash := strings.LastIndex(dir, "/"); lastSlash != -1 {
+		dirPath := dir[:lastSlash]
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			return fmt.Sprintf("error creating directories: %s", err)
+		}
+	}
 
-	err := os.WriteFile(utils.SANDBOX_DIR + "/" + filename, []byte(text), 0644)
+	err := os.WriteFile(utils.SANDBOX_DIR+"/"+filename, []byte(text), 0644)
 	if err != nil {
 		return fmt.Sprintf("error writing to file: %s", err)
 	}

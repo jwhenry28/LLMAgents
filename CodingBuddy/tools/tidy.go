@@ -15,7 +15,7 @@ type GoTidy struct {
 
 func NewGoTidy(input model.ToolInput) tools.Tool {
 	brief := "gotidy: tidies a Go module (akin to 'go mod tidy')"
-	usage := `usage: { "tool": "gotidy", "args": []}
+	usage := `usage: gotidy
 args:
 	- none`
 	return GoTidy{
@@ -24,7 +24,8 @@ args:
 }
 
 func (task GoTidy) Match() bool {
-	return len(task.Input.Args) == 0
+	args := task.Input.GetArgs()
+	return len(args) == 0
 }
 
 func (task GoTidy) Invoke() string {

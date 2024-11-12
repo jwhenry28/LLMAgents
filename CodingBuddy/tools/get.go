@@ -15,7 +15,7 @@ type GoGet struct {
 
 func NewGoGet(input model.ToolInput) tools.Tool {
 	brief := "goget: downloads a Go module (akin to 'go get')"
-	usage := `usage: { "tool": "goget", "args": [ <module name> ]}
+	usage := `usage: goget <module name>
 args:
 	- module name: The name of the module to download`
 	return GoGet{
@@ -24,11 +24,12 @@ args:
 }
 
 func (task GoGet) Match() bool {
-	return len(task.Input.Args) >= 1
+	args := task.Input.GetArgs()
+	return len(args) >= 1
 }
 
 func (task GoGet) Invoke() string {
-	args := task.Input.Args
+	args := task.Input.GetArgs()
 	moduleName := args[0]
 
 	cmd := exec.Command("go", "get", moduleName)

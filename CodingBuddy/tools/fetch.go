@@ -21,7 +21,7 @@ type Fetch struct {
 
 func NewFetch(input model.ToolInput) tools.Tool {
 	brief := "fetch: issues a GET request to the specified URL and returns the raw contents."
-	usage := `usage: { "tool": "fetch", "args": [ <url> ]}
+	usage := `usage: fetch <url>
 args:
 - url: The URL you wish to fetch content from. Must start with http or https.`
 
@@ -51,17 +51,19 @@ args:
 }
 
 func (task Fetch) Match() bool {
-	if len(task.Input.Args) < 1 {
+	args := task.Input.GetArgs()
+	if len(args) < 1 {
 		return false
 	}
 
-	_, err := url.ParseRequestURI(task.Input.Args[0])
+	_, err := url.ParseRequestURI(args[0])
 	return err == nil
 }
 
 func (task Fetch) Invoke() string {
 	scraper := task.scraper
-	scraper.collector.Visit(task.Input.Args[0])
+	args := task.Input.GetArgs()
+	scraper.collector.Visit(args[0])
 	scraper.collector.Wait()
 
 	return scraper.ScrapedText

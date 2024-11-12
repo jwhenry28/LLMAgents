@@ -79,7 +79,7 @@ func TestFetch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fetch := NewFetch(model.ToolInput{
+			fetch := NewFetch(model.TextToolInput{
 				Name: "fetch",
 				Args: tt.args,
 			})

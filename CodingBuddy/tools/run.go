@@ -17,7 +17,7 @@ type Run struct {
 
 func NewRun(input model.ToolInput) tools.Tool {
 	brief := "run: Runs a Golang program."
-	usage := `usage: { "tool": "run", "args": [ <filename> ]}
+	usage := `usage: run <filename>
 args:
 - filename: The name of the file to run`
 	return Run{
@@ -26,11 +26,12 @@ args:
 }
 
 func (task Run) Match() bool {
-	return len(task.Input.Args) >= 1
+	args := task.Input.GetArgs()
+	return len(args) >= 1
 }
 
 func (task Run) Invoke() string {
-	args := task.Input.Args
+	args := task.Input.GetArgs()
 	filename := args[0]
 
 	if strings.HasPrefix(filename, "/") {

@@ -12,7 +12,7 @@ type Finish struct {
 
 func NewFinish(input model.ToolInput) tools.Tool {
 	brief := "finish: let the user know you are finished. note, running this tool will end the conversation."
-	usage := `usage: { "tool": "finish", "args": []}`
+	usage := `usage: finish`
 	return Finish{
 		Base: tools.Base{Input: input, BriefText: brief, UsageText: usage},
 	}
