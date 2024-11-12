@@ -6,17 +6,16 @@ import (
 )
 
 type CmdConversation struct {
-	llm    llm.LLM
-	isOver func(*CmdConversation) bool
-
-	Messages []model.Chat
+	Base
 }
 
-func RunConversation(convoModel llm.LLM, initMessages []model.Chat, isOver func(*CmdConversation) bool) Conversation {
+func RunConversation(convoModel llm.LLM, initMessages []model.Chat, isOver func(Conversation) bool) Conversation {
 	c := CmdConversation{
-		llm:      convoModel,
-		isOver:   isOver,
-		Messages: initMessages,
+		Base: Base{
+			llm:      convoModel,
+			isOver:   isOver,
+			Messages: initMessages,
+		},
 	}
 
 	for _, message := range c.Messages {

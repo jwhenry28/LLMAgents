@@ -23,7 +23,7 @@ func (task Help) Match() bool {
 }
 
 func (task Help) Invoke() string {
-	args := task.Input.Args
+	args := task.Input.GetArgs()
 	output := ""
 	if len(args) == 0 {
 		output = GetToolList()
@@ -37,7 +37,7 @@ func (task Help) Invoke() string {
 func GetToolList() string {
 	output := ""
 	for _, constructor := range Registry {
-		output += " - " + constructor(model.ToolInput{}).Brief() + "\n"
+		output += " - " + constructor(model.TextToolInput{}).Brief() + "\n"
 	}
 
 	return output
@@ -50,7 +50,7 @@ func GetToolHelp(toolName string) string {
 		output = "unknown tool: %s. supported tools:\n"
 		output += GetToolList()
 	} else {
-		output = constructor(model.ToolInput{}).Help()
+		output = constructor(model.TextToolInput{}).Help()
 	}
 
 	return output

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/jwhenry28/LLMAgents/media-curator/scrapers"
 	local "github.com/jwhenry28/LLMAgents/media-curator/tools"
 	"github.com/jwhenry28/LLMAgents/media-curator/utils"
 	"github.com/jwhenry28/LLMAgents/shared/conversation"
@@ -21,7 +22,7 @@ const (
 type Curator struct {
 	fm       utils.FileManager
 	seeds    []string
-	scrapers map[string]*utils.Scraper
+	scrapers map[string]*scrapers.Scraper
 	llm      llm.LLM
 }
 
@@ -49,9 +50,9 @@ func (c *Curator) loadSeeds() {
 }
 
 func (c *Curator) loadScrapers() {
-	c.scrapers = make(map[string]*utils.Scraper)
+	c.scrapers = make(map[string]*scrapers.Scraper)
 	for _, seed := range c.seeds {
-		scraper, err := utils.NewScraper(seed)
+		scraper, err := scrapers.NewScraper(seed)
 		if err != nil {
 			slog.Warn("Error creating seed scraper", "error", err)
 			continue
@@ -75,11 +76,11 @@ func (c *Curator) scrapeSeed(seed string) {
 	scraper.Scrape()
 }
 
-func (c *Curator) getOrCreateScraper(seed string) (*utils.Scraper, error) {
+func (c *Curator) getOrCreateScraper(seed string) (*scrapers.Scraper, error) {
 	scraper, ok := c.scrapers[seed]
 	var err error = nil
 	if !ok {
-		scraper, err = utils.NewScraper(seed)
+		scraper, err = scrapers.NewScraper(seed)
 		if err == nil {
 			c.scrapers[seed] = scraper
 		}
@@ -95,21 +96,22 @@ func (c *Curator) runLLMSession(seed string) {
 		return
 	}
 
-	conversationIsOver := func(c *conversation.Conversation) bool {
-		modelResponse := c.Messages[len(c.Messages)-2]
-		selectedTool, _ := model.ToolInputFromJSON(modelResponse.Content)
-	
-		toolOutput := c.Messages[len(c.Messages)-1]
-	
+	conversationIsOver := func(c conversation.Conversation) bool {
+		messages := c.GetMessages()
+		modelResponse := messages[len(messages)-2]
+		selectedTool, _ := model.FromString(modelResponse.Content)
+
+		toolOutput := messages[len(messages)-1]
+
 		return selectedTool.Name == "decide" && (toolOutput.Content == "notified" || toolOutput.Content == "ignored")
 	}
 
 	messages := c.initialMessages(scraper)
-	conversation := conversation.NewConversation(c.llm, messages, conversationIsOver)
+	conversation := conversation.NewChatConversation(c.llm, messages, conversationIsOver)
 	conversation.RunConversation()
 }
 
-func (c *Curator) initialMessages(scraper *utils.Scraper) []model.Chat {
+func (c *Curator) initialMessages(scraper *scrapers.Scraper) []model.Chat {
 	return []model.Chat{
 		{
 			Role: "system",

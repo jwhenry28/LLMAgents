@@ -61,7 +61,7 @@ func TestToolInputAsString(t *testing.T) {
 	}
 }
 
-func TestToolInputFromJSON(t *testing.T) {
+func TestFromString(t *testing.T) {
 	tests := []struct {
 		name     string
 		json     string
@@ -87,10 +87,10 @@ func TestToolInputFromJSON(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := ToolInputFromJSON(test.json)
+			got, err := FromString(test.json)
 
 			if test.wantErr && err == nil {
-				t.Errorf("ToolInputFromJSON() error = %v, wantErr %v", err, test.wantErr)
+				t.Errorf("FromString() error = %v, wantErr %v", err, test.wantErr)
 				return
 			} else if !test.wantErr && !reflect.DeepEqual(got, test.expected) {
 				t.Errorf("Expected %v but got %v", test.expected.AsString(), got.AsString())

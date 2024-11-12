@@ -11,17 +11,16 @@ import (
 )
 
 type ChatConversation struct {
-	llm    llm.LLM
-	isOver func(*ChatConversation) bool
-
-	Messages []model.Chat
+	Base
 }
 
-func NewChatConversation(convoModel llm.LLM, initMessages []model.Chat, isOver func(*ChatConversation) bool) Conversation {
+func NewChatConversation(convoModel llm.LLM, initMessages []model.Chat, isOver func(Conversation) bool) Conversation {
 	c := ChatConversation{
-		llm:      convoModel,
-		isOver:   isOver,
-		Messages: initMessages,
+		Base: Base{
+			llm:      convoModel,
+			isOver:   isOver,
+			Messages: initMessages,
+		},
 	}
 
 	for _, message := range c.Messages {
@@ -39,7 +38,7 @@ func (c *ChatConversation) RunConversation() {
 			break
 		}
 
-		input, err := model.ToolInputFromJSON(response)
+		input, err := model.NewTextToolInput(response)
 		output := ""
 		if err != nil {
 			output = fmt.Sprintf("error: %s", err)

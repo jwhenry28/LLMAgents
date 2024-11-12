@@ -3,7 +3,7 @@ package tools
 import (
 	"net/url"
 
-	"github.com/jwhenry28/LLMAgents/media-curator/utils"
+	"github.com/jwhenry28/LLMAgents/media-curator/scrapers"
 	"github.com/jwhenry28/LLMAgents/shared/model"
 	"github.com/jwhenry28/LLMAgents/shared/tools"
 )
@@ -32,7 +32,7 @@ func (task Fetch) Match() bool {
 
 // TODO: use common data store with curator.scrapers
 func (task Fetch) Invoke() string {
-	scraper, err := utils.NewScraper(task.Input.Args[0])
+	scraper, err := scrapers.NewScraper(task.Input.Args[0])
 	if err != nil {
 		return "error: " + err.Error()
 	}

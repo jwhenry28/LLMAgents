@@ -1,4 +1,4 @@
-package utils
+package scrapers
 
 import (
 	"log/slog"

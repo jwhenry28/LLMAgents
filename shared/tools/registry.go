@@ -25,14 +25,14 @@ func RegisterTool(name string, constructor func(model.ToolInput) Tool) error {
 }
 
 func RunTool(input model.ToolInput) string {
-	constructor, ok := Registry[input.Name]
+	constructor, ok := Registry[input.GetName()]
 	if !ok {
-		return fmt.Sprintf("unknown tool: %s. use 'help' tool to view supported tools", input.Name)
+		return fmt.Sprintf("unknown tool: %s. use 'help' tool to view supported tools", input.GetName())
 	}
 
 	tool := constructor(input)
 	if !tool.Match() {
-		return fmt.Sprintf("improper usage of tool: %s\n%s", input.Name, tool.Help())
+		return fmt.Sprintf("improper usage of tool: %s\n%s", input.GetName(), tool.Help())
 	}
 
 	return tool.Invoke()
