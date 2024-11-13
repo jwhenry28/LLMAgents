@@ -22,21 +22,21 @@ args:
 }
 
 func (task Fetch) Match() bool {
-	if len(task.Input.Args) < 1 {
+	if len(task.Input.GetArgs()) < 1 {
 		return false
 	}
 
-	_, err := url.ParseRequestURI(task.Input.Args[0])
+	_, err := url.ParseRequestURI(task.Input.GetArgs()[0])
 	return err == nil
 }
 
 // TODO: use common data store with curator.scrapers
 func (task Fetch) Invoke() string {
-	scraper, err := scrapers.NewScraper(task.Input.Args[0])
+	scraper, err := scrapers.NewDefaultScraper(task.Input.GetArgs()[0])
 	if err != nil {
 		return "error: " + err.Error()
 	}
 
 	scraper.Scrape()
-	return scraper.InnerText
+	return scraper.GetFormattedText()
 }

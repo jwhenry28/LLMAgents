@@ -2,7 +2,7 @@ package scrapers
 
 import "testing"
 
-func TestScraperConstructor(t *testing.T) {
+func TestDefaultScraperConstructor(t *testing.T) {
 	testCases := []struct {
 		input     string
 		expected  string
@@ -15,7 +15,7 @@ func TestScraperConstructor(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		_, err := NewScraper(test.input)
+		_, err := NewDefaultScraper(test.input)
 		if test.expectErr == (err == nil) {
 			t.Errorf("Expected error for input %q but got nil", test.input)
 		}

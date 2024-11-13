@@ -28,11 +28,11 @@ args:
 }
 
 func (task Decide) Match() bool {
-	return len(task.Input.Args) >= 2 && slices.Contains(task.AllowedArgs, task.Input.Args[0])
+	return len(task.Input.GetArgs()) >= 2 && slices.Contains(task.AllowedArgs, task.Input.GetArgs()[0])
 }
 
 func (task Decide) Invoke() string {
-	args := task.Input.Args
+	args := task.Input.GetArgs()
 	if args[0] == "NOTIFY" {
 		return "notified"
 	} else if args[0] == "IGNORE" {

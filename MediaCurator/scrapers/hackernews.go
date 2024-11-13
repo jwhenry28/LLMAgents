@@ -1,40 +1,37 @@
 package scrapers
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"strings"
 
 	"github.com/gocolly/colly"
+	"github.com/jwhenry28/LLMAgents/media-curator/model"
 )
 
-func Old() {
-	c := colly.NewCollector()
+type HackerNewsScraper struct {
+	BaseScraper
+}
 
-	var articles []map[string]string
+func NewHackerNewsScraper(urlString string) (Scraper, error) {
+	baseScraper, err := NewBaseScraper(urlString)
+	if err != nil {
+		return nil, err
+	}
+	s := HackerNewsScraper{
+		BaseScraper: baseScraper,
+	}
+	s.initialize()
+	return &s, nil
+}
 
-	c.OnHTML("a", func(e *colly.HTMLElement) {
+func (s *HackerNewsScraper) initialize() {
+	s.Collector.OnHTML("a", func(e *colly.HTMLElement) {
 		url := e.Attr("href")
 		if !strings.Contains(url, "vote") && !strings.Contains(url, "hide") && !strings.Contains(url, "item") {
 			title := e.Text
 			if !strings.HasPrefix(url, "http") {
-				url = "https://news.ycombinator.com/" + url
+				url = s.GetURL() + url
 			}
-			article := map[string]string{"title": title, "url": url}
-			articles = append(articles, article)
+			s.Anchors = append(s.Anchors, model.NewAnchor(title, url))
 		}
 	})
-
-	err := c.Visit("https://news.ycombinator.com")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	jsonData, err := json.MarshalIndent(articles, "", "  ")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(string(jsonData))
 }

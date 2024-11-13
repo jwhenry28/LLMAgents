@@ -19,10 +19,14 @@ const (
 	DESCRIPTION_FILE = "data/description.txt"
 )
 
+var Registry = map[string]func(string) (scrapers.Scraper, error){
+	"news.ycombinator.com": scrapers.NewHackerNewsScraper,
+}
+
 type Curator struct {
 	fm       utils.FileManager
 	seeds    []string
-	scrapers map[string]*scrapers.Scraper
+	scrapers map[string]scrapers.Scraper
 	llm      llm.LLM
 }
 
@@ -32,9 +36,16 @@ func NewCurator(llm llm.LLM) *Curator {
 		llm: llm,
 	}
 
+	c.registerTools()
 	c.loadSeeds()
 	c.loadScrapers()
 	return &c
+}
+
+func (c *Curator) registerTools() {
+	tools.RegisterTool("help", tools.NewHelp)
+	tools.Registry["fetch"] = local.NewFetch
+	tools.Registry["decide"] = local.NewDecide
 }
 
 func (c *Curator) loadSeeds() {
@@ -50,9 +61,9 @@ func (c *Curator) loadSeeds() {
 }
 
 func (c *Curator) loadScrapers() {
-	c.scrapers = make(map[string]*scrapers.Scraper)
+	c.scrapers = make(map[string]scrapers.Scraper)
 	for _, seed := range c.seeds {
-		scraper, err := scrapers.NewScraper(seed)
+		scraper, err := c.getOrCreateScraper(seed)
 		if err != nil {
 			slog.Warn("Error creating seed scraper", "error", err)
 			continue
@@ -63,68 +74,73 @@ func (c *Curator) loadScrapers() {
 
 func (c *Curator) Curate() {
 	for _, seed := range c.seeds {
-		c.scrapeSeed(seed)
 		c.runLLMSession(seed)
 	}
 }
 
-func (c *Curator) scrapeSeed(seed string) {
-	scraper, err := c.getOrCreateScraper(seed)
-	if err != nil {
-		return
-	}
-	scraper.Scrape()
-}
-
-func (c *Curator) getOrCreateScraper(seed string) (*scrapers.Scraper, error) {
-	scraper, ok := c.scrapers[seed]
-	var err error = nil
+func (c *Curator) getOrCreateScraper(seed string) (scrapers.Scraper, error) {
+	seed = strings.TrimSpace(seed)
+	seed = strings.ToLower(seed)
+	seed = strings.TrimSuffix(seed, "/")
+	seed = strings.TrimPrefix(seed, "https://")
+	seed = strings.TrimPrefix(seed, "http://")
+	constructor, ok := Registry[seed]
 	if !ok {
-		scraper, err = scrapers.NewScraper(seed)
-		if err == nil {
-			c.scrapers[seed] = scraper
-		}
+		constructor = scrapers.NewDefaultScraper
 	}
-
-	return scraper, err
+	scraper, err := constructor(seed)
+	if err != nil {
+		return nil, fmt.Errorf("error creating seed scraper: %s", err)
+	}
+	return scraper, nil
 }
 
 func (c *Curator) runLLMSession(seed string) {
-	scraper, err := c.getOrCreateScraper(seed)
-	if err != nil {
-		slog.Error("Error getting scraper", "error", err)
-		return
-	}
-
 	conversationIsOver := func(c conversation.Conversation) bool {
 		messages := c.GetMessages()
 		modelResponse := messages[len(messages)-2]
-		selectedTool, _ := model.FromString(modelResponse.Content)
+		selectedTool, _ := model.NewJSONToolInput(modelResponse.Content)
 
-		toolOutput := messages[len(messages)-1]
-
-		return selectedTool.Name == "decide" && (toolOutput.Content == "notified" || toolOutput.Content == "ignored")
+		return selectedTool.GetName() == "decide"
 	}
 
-	messages := c.initialMessages(scraper)
-	conversation := conversation.NewChatConversation(c.llm, messages, conversationIsOver)
-	conversation.RunConversation()
+	scraper := c.scrapeSeed(seed)
+	for _, anchor := range scraper.GetAnchors() {
+		subScraper, err := c.getOrCreateScraper(anchor.HRef)
+		if err != nil {
+			slog.Warn("Error getting sub-scraper", "error", err)
+			continue
+		}
+		subScraper.Scrape()
+		llmMessages := c.initialMessages(subScraper)
+		conversation := conversation.NewChatConversation(c.llm, llmMessages, conversationIsOver, "json")
+		conversation.RunConversation()
+	}
 }
 
-func (c *Curator) initialMessages(scraper *scrapers.Scraper) []model.Chat {
+func (c *Curator) scrapeSeed(seed string) scrapers.Scraper {
+	scraper, err := c.getOrCreateScraper(seed)
+	if err != nil {
+		return nil
+	}
+	scraper.Scrape()
+	return scraper
+}
+
+func (c *Curator) initialMessages(scraper scrapers.Scraper) []model.Chat {
 	return []model.Chat{
 		{
 			Role: "system",
 			Content: fmt.Sprintf(
 				utils.SYSTEM_PROMPT,
 				c.getDescription(),
-				local.NewDecide(model.ToolInput{}).Help(),
-				tools.NewHelp(model.ToolInput{Name: "help", Args: []string{}}).Invoke(),
+				local.NewDecide(model.JSONToolInput{}).Help(),
+				tools.NewHelp(model.JSONToolInput{Name: "help", Args: []string{}}).Invoke(),
 			),
 		},
 		{
 			Role:    "user",
-			Content: fmt.Sprintf(utils.CONTENT_PROMPT, scraper.URL, scraper.GetAnchorString(), scraper.InnerText),
+			Content: fmt.Sprintf(utils.CONTENT_PROMPT, scraper.GetURL(), scraper.GetFormattedAnchors(), scraper.GetFormattedText()),
 		},
 	}
 }
