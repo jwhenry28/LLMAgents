@@ -42,7 +42,7 @@ func (llm *OpenAI) completeChat(messages []model.Chat, retries int) (string, err
 		return response, err
 	}
 
-	slog.Warn("Rate limit exceeded. Retrying...")
+	slog.Warn("Request failed. Retrying...")
 	return llm.completeChat(messages, retries-1)
 }
 

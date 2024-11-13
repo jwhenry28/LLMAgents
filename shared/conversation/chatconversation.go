@@ -14,12 +14,17 @@ type ChatConversation struct {
 	Base
 }
 
-func NewChatConversation(convoModel llm.LLM, initMessages []model.Chat, isOver func(Conversation) bool) Conversation {
+func NewChatConversation(convoModel llm.LLM, initMessages []model.Chat, isOver func(Conversation) bool, toolInputType string) Conversation {
+	constructor := model.NewTextToolInput
+	if toolInputType == "json" {
+		constructor = model.NewJSONToolInput
+	}
 	c := ChatConversation{
 		Base: Base{
-			llm:      convoModel,
-			isOver:   isOver,
-			Messages: initMessages,
+			llm:              convoModel,
+			isOver:           isOver,
+			Messages:         initMessages,
+			InputConstructor: constructor,
 		},
 	}
 
@@ -38,7 +43,7 @@ func (c *ChatConversation) RunConversation() {
 			break
 		}
 
-		input, err := model.NewTextToolInput(response)
+		input, err := c.InputConstructor(response)
 		output := ""
 		if err != nil {
 			output = fmt.Sprintf("error: %s", err)

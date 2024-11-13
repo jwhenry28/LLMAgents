@@ -14,7 +14,8 @@ type Base struct {
 	llm    llm.LLM
 	isOver func(Conversation) bool
 
-	Messages []model.Chat
+	Messages         []model.Chat
+	InputConstructor func(string) (model.ToolInput, error)
 }
 
 func (b *Base) GetMessages() []model.Chat {
