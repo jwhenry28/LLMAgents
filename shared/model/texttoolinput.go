@@ -11,6 +11,7 @@ type TextToolInput struct {
 }
 
 func NewTextToolInput(response string) (ToolInput, error) {
+	response = strings.TrimSpace(response)
 	if strings.Contains(response, "\n") {
 		return handleMultiline(response)
 	}
@@ -18,18 +19,32 @@ func NewTextToolInput(response string) (ToolInput, error) {
 }
 
 func handleMultiline(response string) (ToolInput, error) {
-	items := strings.Fields(response)
-	if len(items) > 0 {
-		name := items[0]
-		args := strings.TrimSpace(response[len(name):])
-		trimQuotes := (args[0] == '"' || args[0] == '\'') && args[0] == args[len(args)-1]
-		
-		if trimQuotes {
-			args = args[1 : len(args)-1]
-		}
-		return &TextToolInput{Name: name, Args: []string{args}}, nil
+	lines := strings.SplitN(response, "\n", 2)
+	if len(lines) == 0 {
+		return nil, fmt.Errorf("invalid response format")
 	}
-	return nil, fmt.Errorf("invalid response format")
+
+	firstLine := parseCommandLine(lines[0])
+	if len(firstLine) == 0 {
+		return nil, fmt.Errorf("invalid response format") 
+	}
+
+	name := firstLine[0]
+	args := []string{}
+	if len(firstLine) > 1 {
+		args = firstLine[1:]
+	}
+
+	if len(lines) > 1 {
+		firstChar := lines[1][0]
+		lastChar := lines[1][len(lines[1])-1]
+		if (firstChar == '"' || firstChar == '\'') && firstChar == lastChar {
+			lines[1] = lines[1][1 : len(lines[1])-1]
+		}
+		args = append(args, lines[1])
+	}
+
+	return &TextToolInput{Name: name, Args: args}, nil
 }
 
 func handleSingleLine(response string) (ToolInput, error) {

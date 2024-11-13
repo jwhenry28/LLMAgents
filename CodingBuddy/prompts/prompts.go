@@ -66,7 +66,10 @@ Jennifer Garcia,San Jose,CA,2023-03-10,4.3
 AGENT: {
     "tool": "report",
     "args": [
-        "1. Open the XYZ.csv file and read in the 'reviewer', 'city', 'state', 'review_date', and 'rating' columns.\n2. Create a new SQLite database.\n3. Create a new table in the database with the following columns: reviewer, city, state, review_date, rating.\n4. For each row in the excel file, insert the reviewer, city, state, review_date, and rating into the table."
+        "1. Open the XYZ.csv file and read in the 'reviewer', 'city', 'state', 'review_date', and 'rating' columns.
+2. Create a new SQLite database.
+3. Create a new table in the database with the following columns: reviewer, city, state, review_date, rating.
+4. For each row in the excel file, insert the reviewer, city, state, review_date, and rating into the table."
     ]
 }
 `
@@ -76,14 +79,26 @@ You are an LLM agent on a team of software engineers. Each agents in the team ha
 goal of writing a program that solves a given problem.
 
 Your job is to read in a list of instructions written by a previous agent and write Golang code to fufill the 
-criteria. In fulfilling the criteria, you should reach the overall goal.
+criteria. In fulfilling the criteria, you should reach the overall goal. Follow the instructions as closely as possible.
+If the instructions tell you to install a package, install the exact package name. If the instructions tell you 
+to include a file, include the exact file name. If the instructions tell you to use a particular query, use the 
+exact query. Only deviate from the instructions if you observe clear evidence they are wrong.
 
 You are encouraged to use a set of tools to gather information necessary to write a detailed list of instructions. 
 
 All tools follow the same format, similar to a command line:
 <tool name> <arg1> <arg2> ...
 
-Please respond exactly as the above format. Do not send any other text.
+For certain tools, the last argument can be a multi-line string. In that case, you should use actual newlines, not \
+. 
+Example:
+write file.txt
+This is the text
+that I want to write
+to the file.
+
+Please respond exactly as the above format. Do not send any other text. You may only run one tool at a time. 
+If you try to run multiple tools at once, the second tool will be considered input for the first.
 
 Here is a list of supported tools:
 %s
@@ -99,7 +114,65 @@ INSTRUCTION LIST:
 4. For each row in the excel file, insert the reviewer, city, state, review_date, and rating into the table.
 
 AGENT: 
-write sql_parser.go 'package main\n\nimport (\n    \"database/sql\"\n    \"encoding/csv\" \n    \"log\"\n    \"os\"\n    \n    _ \"github.com/mattn/go-sqlite3\"\n)\n\nfunc main() {\n    // Open CSV file\n    file, err := os.Open(\"XYZ.csv\")\n    if err != nil {\n        log.Fatal(err)\n    }\n    defer file.Close()\n\n    // Create CSV reader\n    reader := csv.NewReader(file)\n    records, err := reader.ReadAll()\n    if err != nil {\n        log.Fatal(err)\n    }\n\n    // Create/Open SQLite database\n    db, err := sql.Open(\"sqlite3\", \"./reviews.db\")\n    if err != nil {\n        log.Fatal(err)\n    }\n    defer db.Close()\n\n    // Create table\n    createTableSQL := ` + "`" + `CREATE TABLE IF NOT EXISTS reviews (\n        reviewer TEXT,\n        city TEXT,\n        state TEXT,\n        review_date TEXT,\n        rating REAL\n    )` + "`" + `\n    _, err = db.Exec(createTableSQL)\n    if err != nil {\n        log.Fatal(err)\n    }\n\n    // Insert records\n    insertSQL := ` + "`" + `INSERT INTO reviews(reviewer, city, state, review_date, rating) VALUES (?, ?, ?, ?, ?)` + "`" + `\n    for i, record := range records {\n        if i == 0 { // Skip header row\n            continue\n        }\n        _, err = db.Exec(insertSQL, record[0], record[1], record[2], record[3], record[4])\n        if err != nil {\n            log.Fatal(err)\n        }\n    fmt.Println(\"Done!\")\n}\n}'
+write sql_parser.go 'package main
+
+import (
+    "database/sql"
+    "encoding/csv" 
+    "log"
+    "os"
+    
+    _ "github.com/mattn/go-sqlite3"
+)
+
+func main() {
+    // Open CSV file
+    file, err := os.Open("XYZ.csv")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer file.Close()
+
+    // Create CSV reader
+    reader := csv.NewReader(file)
+    records, err := reader.ReadAll()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Create/Open SQLite database
+    db, err := sql.Open("sqlite3", "./reviews.db")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
+
+    // Create table
+    createTableSQL := ` + "`" + `CREATE TABLE IF NOT EXISTS reviews (
+        reviewer TEXT,
+        city TEXT,
+        state TEXT,
+        review_date TEXT,
+        rating REAL
+    )` + "`" + `
+    _, err = db.Exec(createTableSQL)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Insert records
+    insertSQL := ` + "`" + `INSERT INTO reviews(reviewer, city, state, review_date, rating) VALUES (?, ?, ?, ?, ?)` + "`" + `
+    for i, record := range records {
+        if i == 0 { // Skip header row
+            continue
+        }
+        _, err = db.Exec(insertSQL, record[0], record[1], record[2], record[3], record[4])
+        if err != nil {
+            log.Fatal(err)
+        }
+    fmt.Println("Done!")
+}
+}'
 
 RESPONSE: 
 success

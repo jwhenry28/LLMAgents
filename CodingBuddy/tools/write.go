@@ -17,10 +17,11 @@ type Write struct {
 
 func NewWrite(input model.ToolInput) tools.Tool {
 	brief := "write: writes text to a file."
-	usage := `usage: { "tool": "write", "args": [ <filename>, <text> ]}
+	usage := `usage: write <filename>
+<text>
 args:
 - filename: The name of the file to write to
-- text: The text to write to the file`
+- text: The text to write to the file. Note, use actual newlines, not \\n.`
 	return Write{
 		Base: tools.Base{Input: input, BriefText: brief, UsageText: usage},
 	}

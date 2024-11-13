@@ -4,7 +4,6 @@ go 1.23.2
 
 require (
 	github.com/gocolly/colly v1.2.0
-	github.com/gocolly/colly/v2 v2.1.0
 	github.com/jwhenry28/LLMAgents/shared v0.0.0
 )
 
@@ -14,6 +13,7 @@ require (
 	github.com/antchfx/htmlquery v1.3.3 // indirect
 	github.com/antchfx/xmlquery v1.4.2 // indirect
 	github.com/antchfx/xpath v1.3.2 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

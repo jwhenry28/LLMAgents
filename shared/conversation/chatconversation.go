@@ -52,7 +52,7 @@ func (c *ChatConversation) RunConversation() {
 		c.Messages[len(c.Messages)-2].Print()
 		c.Messages[len(c.Messages)-1].Print()
 
-		if c.isOver(c) {
+		if err == nil && c.isOver(c) {
 			break
 		}
 	}

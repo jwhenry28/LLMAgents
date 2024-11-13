@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/jwhenry28/LLMAgents/shared/model"
 )
@@ -17,32 +16,37 @@ func NewHuman() *Human {
 }
 
 func (llm *Human) CompleteChat(messages []model.Chat) (string, error) {
-	tool := ""
-	args := []string{}
+	fmt.Print("\nEnter tool and args (space separated):\n")
 
-	fmt.Println(messages[len(messages)-2])
-	fmt.Println(messages[len(messages)-1])
-
-	fmt.Print("Enter tool and args (space separated): ")
 	scanner := bufio.NewScanner(os.Stdin)
-	if scanner.Scan() {
-		input := strings.Fields(scanner.Text())
-		if len(input) > 0 {
-			tool = input[0]
-			if len(input) > 1 {
-				args = input[1:]
+	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
+		}
+
+		// Look for three consecutive newlines
+		for i := 0; i < len(data)-2; i++ {
+			if data[i] == '\n' && data[i+1] == '\n' && data[i+2] == '\n' {
+				return i + 3, data[0:i], nil
 			}
 		}
-	}
 
-	response := `{ "tool": "` + tool + `", "args": [ `
-	for i, arg := range args {
-		response += `"` + arg + `"`
-		if i < len(args)-1 {
-			response += `, `
+		// If we're at EOF, return all remaining data
+		if atEOF {
+			return len(data), data, nil
 		}
-	}
-	response += `] }`
 
-	return response, nil
+		// Request more data
+		return 0, nil, nil
+	})
+
+	input := ""
+	for scanner.Scan() {
+		if scanner.Text() == "" {
+			break
+		}
+		input += scanner.Text()
+	}
+
+	return input, nil
 }

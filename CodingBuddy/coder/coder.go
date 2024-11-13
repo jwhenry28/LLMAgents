@@ -2,9 +2,12 @@ package coder
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/jwhenry28/LLMAgents/coding-buddy/prompts"
 	local "github.com/jwhenry28/LLMAgents/coding-buddy/tools"
+	"github.com/jwhenry28/LLMAgents/coding-buddy/utils"
 	"github.com/jwhenry28/LLMAgents/shared/conversation"
 	"github.com/jwhenry28/LLMAgents/shared/llm"
 	"github.com/jwhenry28/LLMAgents/shared/model"
@@ -24,6 +27,7 @@ func registerTools() {
 	tools.Registry["read"] = local.NewRead
 	tools.Registry["write"] = local.NewWrite
 	tools.Registry["run"] = local.NewRun
+	tools.Registry["goinit"] = local.NewGoInit
 	tools.Registry["goget"] = local.NewGoGet
 	tools.Registry["gotidy"] = local.NewGoTidy
 	tools.Registry["fetch"] = local.NewFetch
@@ -31,8 +35,26 @@ func registerTools() {
 	tools.Registry["finish"] = local.NewFinish
 }
 
+func setupSandbox() {
+	if err := os.MkdirAll("sandbox", 0755); err != nil {
+		panic("failed to create sandbox directory")
+	}
+
+	dir, err := os.ReadDir("sandbox")
+	if err != nil {
+		panic("failed to read sandbox directory")
+	}
+
+	for _, entry := range dir {
+		if err := os.RemoveAll(filepath.Join(utils.SANDBOX_DIR, entry.Name())); err != nil {
+			panic("failed to remove sandbox entry")
+		}
+	}
+}
+
 func (c *Coder) Code() {
 	registerTools()
+	setupSandbox()
 
 	// c.generateSuccessCriteria()
 	// successCriteria := c.generateSuccessCriteria()

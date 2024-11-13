@@ -12,7 +12,18 @@
             "console": "integratedTerminal",
             "program": "${workspaceRoot}/MediaCurator/media",
             "cwd": "${workspaceRoot}/MediaCurator",
-            "preLaunchTask": "go: build (debug)"
+            "preLaunchTask": "go: build (media curator)"
+        },
+        {
+            "name": "Debug Coding Buddy",
+            "type": "go",
+            "request": "launch",
+            "mode": "exec",
+            "args": ["-llm", "human"],
+            "console": "integratedTerminal",
+            "program": "${workspaceRoot}/CodingBuddy/codingbuddy",
+            "cwd": "${workspaceRoot}/CodingBuddy",
+            "preLaunchTask": "go: build (coding buddy)"
         },
         {
             "name": "CodingBuddy Tools Tests",
@@ -24,14 +35,13 @@
             "showLog": true
         },
         {
-            "name": "Debug CodingBuddy Output",
+            "name": "Shared Model Tests",
             "type": "go",
             "request": "launch",
-            "mode": "exec",
-            "console": "integratedTerminal",
-            "program": "${workspaceRoot}/CodingBuddy/sandbox/whois_domain.go",
-            "cwd": "${workspaceRoot}/CodingBuddy",
-            "preLaunchTask": "go: build (debug)"
+            "mode": "test",
+            "cwd": "${workspaceRoot}/shared",
+            "program": "${workspaceFolder}/shared/model",
+            "showLog": true
         },
     ],
 

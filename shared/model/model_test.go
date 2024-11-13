@@ -158,7 +158,7 @@ func TestNewTextToolInput(t *testing.T) {
 			input: "decide This\nis a\nmultiline argument",
 			expected: &TextToolInput{
 				Name: "decide",
-				Args: []string{"This\nis a\nmultiline argument"},
+				Args: []string{"This", "is a\nmultiline argument"},
 			},
 			wantErr: false,
 		},
@@ -240,13 +240,12 @@ func TestNewTextToolInput(t *testing.T) {
 		{
 			name:  "newline with quotes",
 			input: `decide "this is a 'complex'
-example with
+"example with
 \"nested quotes\"
 and a newline"`,
 			expected: &TextToolInput{
 				Name: "decide",
-				Args: []string{`this is a 'complex'
-example with
+				Args: []string{"this is a 'complex'", `example with
 \"nested quotes\"
 and a newline`},
 			},
