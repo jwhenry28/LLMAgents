@@ -1,7 +1,7 @@
 package scrapers
 
 import (
-	"strings"
+	"net/url"
 
 	"github.com/gocolly/colly"
 	"github.com/jwhenry28/LLMAgents/media-curator/model"
@@ -25,13 +25,17 @@ func NewHackerNewsScraper(urlString string) (Scraper, error) {
 
 func (s *HackerNewsScraper) initialize() {
 	s.Collector.OnHTML("a", func(e *colly.HTMLElement) {
-		url := e.Attr("href")
-		if !strings.Contains(url, "vote") && !strings.Contains(url, "hide") && !strings.Contains(url, "item") {
-			title := e.Text
-			if !strings.HasPrefix(url, "http") {
-				url = s.GetURL() + url
-			}
-			s.Anchors = append(s.Anchors, model.NewAnchor(title, url))
+		hyperlink := e.Attr("href")
+		if s.isExternalUrl(hyperlink) {
+			s.Anchors = append(s.Anchors, model.NewAnchor(e.Text, hyperlink))
 		}
 	})
+}
+
+func (s *HackerNewsScraper) isExternalUrl(urlString string) bool {
+	url, err := url.ParseRequestURI(urlString)
+	if err != nil {
+		return false
+	}
+	return url.Host != s.URL.Host
 }

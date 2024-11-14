@@ -52,14 +52,13 @@ func (c *ChatConversation) RunConversation() {
 		}
 
 		c.Messages = append(c.Messages, model.NewChat("assistant", response))
-		c.Messages = append(c.Messages, model.NewChat("user", output))
-
-		c.Messages[len(c.Messages)-2].Print()
 		c.Messages[len(c.Messages)-1].Print()
-
 		if err == nil && c.isOver(c) {
 			break
 		}
+		
+		c.Messages = append(c.Messages, model.NewChat("user", output))
+		c.Messages[len(c.Messages)-1].Print()
 	}
 }
 

@@ -1,0 +1,1 @@
+[{"URL":"https://www.iana.org/domains/example","Decision":"IGNORE","Justification":"The content of the URL is about example domains maintained for documentation purposes, as described in RFC 2606 and RFC 6761. It does not contain any information related to novel attack techniques or AI security, which are the client's areas of interest."}]

@@ -20,7 +20,7 @@ args:
 - decision: Your decision. Must be one of the following:
 	- IGNORE: Choose this option if you do not think your client will be interested in reading this URL today.
 	- NOTIFY: Choose this option if you would like to forward this URL to your client
-- justification: (optional) A short explanation for your decision`
+- justification: A short explanation for your decision`
 	return Decide{
 		AllowedArgs: []string{"NOTIFY", "IGNORE"},
 		Base:        tools.Base{Input: input, BriefText: brief, UsageText: usage},
@@ -28,7 +28,8 @@ args:
 }
 
 func (task Decide) Match() bool {
-	return len(task.Input.GetArgs()) >= 2 && slices.Contains(task.AllowedArgs, task.Input.GetArgs()[0])
+	args := task.Input.GetArgs()
+	return len(args) >= 3 && slices.Contains(task.AllowedArgs, args[0])
 }
 
 func (task Decide) Invoke() string {

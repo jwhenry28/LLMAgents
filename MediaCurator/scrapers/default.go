@@ -1,6 +1,7 @@
 package scrapers
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gocolly/colly"
@@ -27,11 +28,18 @@ func (s *DefaultScraper) initialize() {
 	s.Collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		hyperlink := e.Attr("href")
 		if !strings.HasPrefix(hyperlink, "http") {
-			hyperlink = s.GetURL() + hyperlink
+			url := s.GetURL()
+			if !strings.HasSuffix(url, "/") && !strings.HasPrefix(hyperlink, "/") {
+				url += "/"
+			}
+			hyperlink = url + hyperlink
 		}
-		s.Anchors = append(s.Anchors, model.NewAnchor(e.Text, hyperlink))
+		anchor := model.NewAnchor(e.Text, hyperlink)
+		s.Anchors = append(s.Anchors, anchor)
+		s.FullText += fmt.Sprintf("<a href=\"%s\">%s</a>", hyperlink, e.Text)
 	})
 	s.Collector.OnHTML("p,article,code,h1,h2,h3,h4,h5,h6", func(e *colly.HTMLElement) {
 		s.InnerText += e.Text
+		s.FullText += e.Text
 	})
 }

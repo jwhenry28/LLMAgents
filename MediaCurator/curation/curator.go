@@ -1,8 +1,10 @@
 package curation
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/jwhenry28/LLMAgents/media-curator/scrapers"
@@ -21,6 +23,12 @@ const (
 
 var Registry = map[string]func(string) (scrapers.Scraper, error){
 	"news.ycombinator.com": scrapers.NewHackerNewsScraper,
+}
+
+type Result struct {
+	URL           string
+	Decision      string
+	Justification string
 }
 
 type Curator struct {
@@ -98,14 +106,17 @@ func (c *Curator) getOrCreateScraper(seed string) (scrapers.Scraper, error) {
 func (c *Curator) runLLMSession(seed string) {
 	conversationIsOver := func(c conversation.Conversation) bool {
 		messages := c.GetMessages()
-		modelResponse := messages[len(messages)-2]
+		modelResponse := messages[len(messages)-1]
 		selectedTool, _ := model.NewJSONToolInput(modelResponse.Content)
 
 		return selectedTool.GetName() == "decide"
 	}
 
 	scraper := c.scrapeSeed(seed)
-	for _, anchor := range scraper.GetAnchors() {
+	var decision model.ToolInput
+	results := []Result{}
+	anchors := scraper.GetAnchors()
+	for _, anchor := range anchors {
 		subScraper, err := c.getOrCreateScraper(anchor.HRef)
 		if err != nil {
 			slog.Warn("Error getting sub-scraper", "error", err)
@@ -115,6 +126,31 @@ func (c *Curator) runLLMSession(seed string) {
 		llmMessages := c.initialMessages(subScraper)
 		conversation := conversation.NewChatConversation(c.llm, llmMessages, conversationIsOver, "json")
 		conversation.RunConversation()
+		messages := conversation.GetMessages()
+		lastMessage := messages[len(messages)-1]
+		decision, err = model.NewJSONToolInput(lastMessage.Content)
+		if err != nil {
+			slog.Warn("Error parsing decision", "error", err)
+			continue
+		}
+		args := decision.GetArgs()
+		result := Result{
+			Decision:      args[0],
+			URL:           args[1],
+			Justification: args[2],
+		}
+		results = append(results, result)
+	}
+	resultsJson, err := json.Marshal(results)
+	if err != nil {
+		slog.Error("Error marshaling results", "error", err)
+		return
+	}
+
+	err = os.WriteFile("./data/results.json", resultsJson, 0644)
+	if err != nil {
+		slog.Error("Error writing results file", "error", err)
+		return
 	}
 }
 

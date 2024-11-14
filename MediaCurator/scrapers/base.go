@@ -14,6 +14,7 @@ type Scraper interface {
 	GetURL() string
 	GetAnchors() []model.Anchor
 	GetFormattedAnchors() string
+	GetInnerText() string
 	GetFormattedText() string
 }
 
@@ -21,6 +22,7 @@ type BaseScraper struct {
 	URL       *url.URL
 	Anchors   []model.Anchor
 	InnerText string
+	FullText  string
 
 	Collector *colly.Collector
 }
@@ -61,7 +63,17 @@ func (s *BaseScraper) Scrape() {
 }
 
 func (s *BaseScraper) GetAnchors() []model.Anchor {
-	return s.Anchors
+	seen := make(map[string]bool)
+	unique := make([]model.Anchor, 0)
+	
+	for _, anchor := range s.Anchors {
+		if !seen[anchor.HRef] {
+			seen[anchor.HRef] = true
+			unique = append(unique, anchor)
+		}
+	}
+	
+	return unique
 }
 
 func (s *BaseScraper) GetFormattedAnchors() string {
@@ -72,6 +84,10 @@ func (s *BaseScraper) GetFormattedAnchors() string {
 	return string(bytes)
 }
 
-func (s *BaseScraper) GetFormattedText() string {
+func (s *BaseScraper) GetInnerText() string {
 	return s.InnerText
+}
+
+func (s *BaseScraper) GetFormattedText() string {
+	return s.FullText
 }
