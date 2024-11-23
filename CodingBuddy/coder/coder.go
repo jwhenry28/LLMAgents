@@ -56,7 +56,7 @@ func (c *Coder) Code() {
 	registerTools()
 	setupSandbox()
 
-	// c.generateSuccessCriteria()
+	c.generateSuccessCriteria()
 	// successCriteria := c.generateSuccessCriteria()
 	c.generateCode("nil")
 }
@@ -65,7 +65,7 @@ func (c *Coder) generateSuccessCriteria() string {
 	conversationIsOver := func(c conversation.Conversation) bool {
 		messages := c.GetMessages()
 		modelResponse := messages[len(messages)-2]
-		selectedTool, _ := model.NewTextToolInput(modelResponse.Content)
+		selectedTool, _ := model.NewJSONToolInput(modelResponse.Content)
 
 		return selectedTool.GetName() == "report"
 	}
@@ -89,7 +89,7 @@ func (c *Coder) generateCode(successCriteria string) {
 }
 
 func (c *Coder) runConversation(initMessages []model.Chat, isOver func(conversation.Conversation) bool) []model.Chat {
-	conversation := conversation.NewChatConversation(c.llm, initMessages, isOver)
+	conversation := conversation.NewChatConversation(c.llm, initMessages, isOver, "json")
 	conversation.RunConversation()
 
 	return conversation.GetMessages()
@@ -104,37 +104,38 @@ func (c *Coder) initialSuccessCriteriaMessages() []model.Chat {
 }
 
 func (c *Coder) initialCodeMessages(successCriteria string) []model.Chat {
-	userPrompt := `INSTRUCTION LIST:
-1. Import necessary packages: net/url, github.com/gocolly/colly, and any other required packages.
+// 	userPrompt := `INSTRUCTION LIST:
+// 1. Import necessary packages: net/url, github.com/gocolly/colly, and any other required packages.
 
-2. Define the Anchor struct in a separate package named model with the following fields:
-   - Text string
-   - HRef string
+// 2. Define the Anchor struct in a separate package named model with the following fields:
+//    - Text string
+//    - HRef string
 
-3. Define the HackerNewsScraper struct with the following fields:
-   - URL *url.URL: to store the URL of the page being scraped.
-   - Anchors []model.Anchor: to store the list of anchors found on the page.
-   - InnerText string: to store the inner text of the page.
-   - collector *colly.Collector: to store the Gocolly object used to scrape the page.
+// 3. Define the HackerNewsScraper struct with the following fields:
+//    - URL *url.URL: to store the URL of the page being scraped.
+//    - Anchors []model.Anchor: to store the list of anchors found on the page.
+//    - InnerText string: to store the inner text of the page.
+//    - collector *colly.Collector: to store the Gocolly object used to scrape the page.
 
-4. Implement a constructor function NewHackerNewsScraper that initializes a HackerNewsScraper object:
-   - Parse the Hacker News URL using url.Parse and assign it to the URL field.
-   - Initialize the collector field with colly.NewCollector().
+// 4. Implement a constructor function NewHackerNewsScraper that initializes a HackerNewsScraper object:
+//    - Parse the Hacker News URL using url.Parse and assign it to the URL field.
+//    - Initialize the collector field with colly.NewCollector().
 
-5. Implement a method Scrape for the HackerNewsScraper struct:
-   - Use the collector.OnHTML method to find all <a> tags on the page.
-   - For each <a> tag, extract the href attribute and the inner text.
-   - Create a new model.Anchor object with the extracted href and inner text, and append it to the Anchors slice.
-   - Use the collector.OnResponse method to capture the entire response body and assign it to the InnerText field.
+// 5. Implement a method Scrape for the HackerNewsScraper struct:
+//    - Use the collector.OnHTML method to find all <a> tags on the page.
+//    - For each <a> tag, extract the href attribute and the inner text.
+//    - Create a new model.Anchor object with the extracted href and inner text, and append it to the Anchors slice.
+//    - Use the collector.OnResponse method to capture the entire response body and assign it to the InnerText field.
 
-6. Implement a method GetFeaturedArticles for the HackerNewsScraper struct:
-   - Filter the Anchors slice to include only those anchors that are likely to be featured articles. This can be done by checking if the HRef is a full URL (starts with http or https) and the Text is not empty.
-   - Return the filtered list of model.Anchor objects.
+// 6. Implement a method GetFeaturedArticles for the HackerNewsScraper struct:
+//    - Filter the Anchors slice to include only those anchors that are likely to be featured articles. This can be done by checking if the HRef is a full URL (starts with http or https) and the Text is not empty.
+//    - Return the filtered list of model.Anchor objects.
 
-7. In the main function, create an instance of HackerNewsScraper using the constructor.
-   - Call the Scrape method to perform the scraping.
-   - Retrieve the featured articles using the GetFeaturedArticles method.
-   - Print or process the list of featured articles as needed.`
+// 7. In the main function, create an instance of HackerNewsScraper using the constructor.
+//    - Call the Scrape method to perform the scraping.
+//    - Retrieve the featured articles using the GetFeaturedArticles method.
+//    - Print or process the list of featured articles as needed.`
+	userPrompt := c.getUserPrompt()
 	return []model.Chat{
 		{Role: "system", Content: fmt.Sprintf(prompts.SYSTEM_CODE, tools.GetToolList())},
 		{Role: "user", Content: userPrompt},
@@ -150,19 +151,19 @@ func (c *Coder) getUserPrompt() string {
 	// }
 
 	// return prompt
-	// return "I want you to write a program that prints 'Hello, world!'"
-	return `
-Scrape all featured news articles from Hacker News (https://news.ycombinator.com).
+	return "I want you to write a program that prints 'Hello, world!'"
+// 	return `
+// Scrape all featured news articles from Hacker News (https://news.ycombinator.com).
 
-You should encapsulate your scraper into a HackerNewsScraper struct that exposes the following methods and fields:
-type HackerNewsScraper struct {
-	URL       *url.URL  // the URL of the page being scraped
-	Anchors   []model.Anchor // the list of anchors found on the page; Anchor has fields Text and HRef
-	InnerText string // the inner text of the page
+// You should encapsulate your scraper into a HackerNewsScraper struct that exposes the following methods and fields:
+// type HackerNewsScraper struct {
+// 	URL       *url.URL  // the URL of the page being scraped
+// 	Anchors   []model.Anchor // the list of anchors found on the page; Anchor has fields Text and HRef
+// 	InnerText string // the inner text of the page
 
-	collector *colly.Collector // the Gocolly object used to scrape the page
-}
-`
+// 	collector *colly.Collector // the Gocolly object used to scrape the page
+// }
+// `
 	//	return `
 	//
 	// Write a Golang function "WhoisDomain" that does the following:

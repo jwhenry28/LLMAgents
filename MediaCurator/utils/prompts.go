@@ -12,12 +12,16 @@ client.
 Here is a description of the client's interests/goals:
 %s
 
-When you have finished review the URL and text, make a decision by returning a JSON object like so:
+When you have finished review the URL and text, make a decision by running the "decide" tool, like so:
 %s
 
 Here is a list of all the tools you have available:
 %s
 
+%s
+`
+
+const JSON_TOOL_FORMAT = `
 Please respond in raw JSON format. Do not send any other text, including a markdown JSON code block.
 `
 

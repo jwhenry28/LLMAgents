@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/jwhenry28/LLMAgents/media-curator/scrapers"
@@ -30,7 +31,6 @@ func (task Fetch) Match() bool {
 	return err == nil
 }
 
-// TODO: use common data store with curator.scrapers
 func (task Fetch) Invoke() string {
 	scraper, err := scrapers.NewDefaultScraper(task.Input.GetArgs()[0])
 	if err != nil {
@@ -38,5 +38,9 @@ func (task Fetch) Invoke() string {
 	}
 
 	scraper.Scrape()
+	if scraper.GetErr() != nil {
+		return fmt.Sprintf("error: %d - %s", scraper.GetStatusCode(), scraper.GetErr().Error())
+	}
+
 	return scraper.GetFormattedText()
 }

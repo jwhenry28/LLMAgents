@@ -27,7 +27,7 @@ func RegisterTool(name string, constructor func(model.ToolInput) Tool) error {
 func RunTool(input model.ToolInput) string {
 	constructor, ok := Registry[input.GetName()]
 	if !ok {
-		return fmt.Sprintf("unknown tool: %s. use 'help' tool to view supported tools", input.GetName())
+		return fmt.Sprintf("unregistered tool: %s. use 'help' tool to view registered tools", input.GetName())
 	}
 
 	tool := constructor(input)

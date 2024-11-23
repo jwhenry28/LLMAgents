@@ -109,7 +109,9 @@ func (c *Curator) runLLMSession(seed string) {
 		modelResponse := messages[len(messages)-1]
 		selectedTool, _ := model.NewJSONToolInput(modelResponse.Content)
 
-		return selectedTool.GetName() == "decide"
+		constructor, ok := tools.Registry["decide"]
+
+		return ok && selectedTool.GetName() == "decide" && constructor(selectedTool).Match()
 	}
 
 	scraper := c.scrapeSeed(seed)
@@ -140,7 +142,11 @@ func (c *Curator) runLLMSession(seed string) {
 			Justification: args[2],
 		}
 		results = append(results, result)
+		c.saveResults(results)
 	}
+}
+
+func (c *Curator) saveResults(results []Result) {
 	resultsJson, err := json.Marshal(results)
 	if err != nil {
 		slog.Error("Error marshaling results", "error", err)
@@ -172,6 +178,7 @@ func (c *Curator) initialMessages(scraper scrapers.Scraper) []model.Chat {
 				c.getDescription(),
 				local.NewDecide(model.JSONToolInput{}).Help(),
 				tools.NewHelp(model.JSONToolInput{Name: "help", Args: []string{}}).Invoke(),
+				utils.JSON_TOOL_FORMAT,
 			),
 		},
 		{

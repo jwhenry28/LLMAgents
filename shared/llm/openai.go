@@ -32,21 +32,10 @@ func NewOpenAI(apikey string, model string, temperature int) *OpenAI {
 }
 
 func (llm *OpenAI) CompleteChat(messages []model.Chat) (string, error) {
-	defaultRetries := 3
-	return llm.completeChat(messages, defaultRetries)
+	return llm.completeChat(messages, DEFAULT_RETRIES)
 }
 
 func (llm *OpenAI) completeChat(messages []model.Chat, retries int) (string, error) {
-	response, err := llm.completeChatRequest(messages)
-	if err == nil || retries <= 1 {
-		return response, err
-	}
-
-	slog.Warn("Request failed. Retrying...")
-	return llm.completeChat(messages, retries-1)
-}
-
-func (llm *OpenAI) completeChatRequest(messages []model.Chat) (string, error) {
 	endpoint := llm.apiUrl + "/v1/chat/completions"
 
 	requestBody, err := json.Marshal(map[string]interface{}{
@@ -79,11 +68,14 @@ func (llm *OpenAI) completeChatRequest(messages []model.Chat) (string, error) {
 	}
 
 	if resp.StatusCode == http.StatusTooManyRequests {
+		if retries <= 1 {
+			return "", fmt.Errorf("rate limit exceeded")
+		}
 		jitter := 1.0
 		duration := llm.getRetryDelay(string(body)) + jitter
-		slog.Warn("Rate limit exceeded. Retrying...", "duration", duration)
+		slog.Warn("rate limit exceeded", "retries", retries-1, "waiting", duration)
 		time.Sleep(time.Duration(duration) * time.Second)
-		return llm.completeChatRequest(messages)
+		return llm.completeChat(messages, retries-1)
 	}
 
 	if resp.StatusCode != http.StatusOK {

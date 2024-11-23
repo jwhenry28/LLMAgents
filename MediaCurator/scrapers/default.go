@@ -9,7 +9,7 @@ import (
 )
 
 type DefaultScraper struct {
-	BaseScraper
+	*BaseScraper
 }
 
 func NewDefaultScraper(urlString string) (Scraper, error) {
@@ -18,13 +18,20 @@ func NewDefaultScraper(urlString string) (Scraper, error) {
 		return nil, err
 	}
 	s := DefaultScraper{
-		BaseScraper: baseScraper,
+		BaseScraper: &baseScraper,
 	}
 	s.initialize()
 	return &s, nil
 }
 
 func (s *DefaultScraper) initialize() {
+	s.Collector.OnRequest(func(r *colly.Request) {
+		s.Err = nil
+	})
+	s.Collector.OnError(func(r *colly.Response, err error) {
+		s.StatusCode = r.StatusCode
+		s.Err = err
+	})
 	s.Collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		hyperlink := e.Attr("href")
 		if !strings.HasPrefix(hyperlink, "http") {
@@ -41,5 +48,8 @@ func (s *DefaultScraper) initialize() {
 	s.Collector.OnHTML("p,article,code,h1,h2,h3,h4,h5,h6", func(e *colly.HTMLElement) {
 		s.InnerText += e.Text
 		s.FullText += e.Text
+	})
+	s.Collector.OnScraped(func(r *colly.Response) {
+		s.StatusCode = r.StatusCode
 	})
 }
