@@ -31,6 +31,10 @@ func NewOpenAI(apikey string, model string, temperature int) *OpenAI {
 	}
 }
 
+func (llm *OpenAI) Type() string {
+	return "openai"
+}
+
 func (llm *OpenAI) CompleteChat(messages []model.Chat) (string, error) {
 	return llm.completeChat(messages, DEFAULT_RETRIES)
 }

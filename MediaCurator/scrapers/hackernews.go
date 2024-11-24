@@ -5,6 +5,7 @@ import (
 
 	"github.com/gocolly/colly"
 	"github.com/jwhenry28/LLMAgents/media-curator/model"
+	"golang.org/x/net/publicsuffix"
 )
 
 type HackerNewsScraper struct {
@@ -37,5 +38,7 @@ func (s *HackerNewsScraper) isExternalUrl(urlString string) bool {
 	if err != nil {
 		return false
 	}
-	return url.Host != s.URL.Host
+	hostRoot, _ := publicsuffix.EffectiveTLDPlusOne(s.URL.Hostname())
+	targetRoot, err := publicsuffix.EffectiveTLDPlusOne(url.Hostname())
+	return err == nil && hostRoot != targetRoot
 }

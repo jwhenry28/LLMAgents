@@ -10,6 +10,7 @@ const DEFAULT_RETRIES = 3
 
 type LLM interface {
 	CompleteChat([]model.Chat) (string, error)
+	Type() string
 }
 
 func ConstructLLM(llmType string) LLM {
@@ -23,7 +24,7 @@ func ConstructLLM(llmType string) LLM {
 	case "claude":
 		fallthrough
 	case "anthropic":
-		return NewClaude(os.Getenv("ANTHROPIC_API_KEY"), os.Getenv("ANTHROPIC_MODEL"), 0)
+		return NewAnthropic(os.Getenv("ANTHROPIC_API_KEY"), os.Getenv("ANTHROPIC_MODEL"), 0)
 	default:
 		return nil
 	}

@@ -44,9 +44,15 @@ func main() {
 		slog.Warn("Error loading environment variables", "error", err)
 	}
 
-	llmTypeFlag := flag.String("llm", "openai", "Type of LLM to use (openai, human, mock)")
+	llmTypeFlag := flag.String("llm", "", "Type of LLM to use (openai, human, mock)")
+	emailRecipient := flag.String("email", "", "Email address to send results to (optional)")
 	flag.Parse()
 
-	curator := curation.NewCurator(llm.ConstructLLM(*llmTypeFlag))
+	llm := llm.ConstructLLM(*llmTypeFlag)
+	if llm == nil {
+		slog.Error("failed to create llm", "type", *llmTypeFlag)
+		return
+	}
+	curator := curation.NewCurator(llm, *emailRecipient)
 	curator.Curate()
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/jwhenry28/LLMAgents/shared/model"
 )
 
-type Claude struct {
+type Anthropic struct {
 	ApiKey      string
 	Model       string
 	Temperature int
@@ -21,8 +21,8 @@ type Claude struct {
 	apiUrl string
 }
 
-func NewClaude(apikey string, model string, temperature int) *Claude {
-	return &Claude{
+func NewAnthropic(apikey string, model string, temperature int) *Anthropic {
+	return &Anthropic{
 		ApiKey:      apikey,
 		Model:       model,
 		Temperature: temperature,
@@ -30,11 +30,15 @@ func NewClaude(apikey string, model string, temperature int) *Claude {
 	}
 }
 
-func (llm *Claude) CompleteChat(messages []model.Chat) (string, error) {
+func (llm *Anthropic) Type() string {
+	return "anthropic"
+}
+
+func (llm *Anthropic) CompleteChat(messages []model.Chat) (string, error) {
 	return llm.completeChat(messages, DEFAULT_RETRIES)
 }
 
-func (llm *Claude) completeChat(messages []model.Chat, retries int) (string, error) {
+func (llm *Anthropic) completeChat(messages []model.Chat, retries int) (string, error) {
 	endpoint := llm.apiUrl + "/v1/messages"
 
 	requestBody, err := json.Marshal(map[string]interface{}{
@@ -42,6 +46,7 @@ func (llm *Claude) completeChat(messages []model.Chat, retries int) (string, err
 		"messages":    messages[1:],
 		"temperature": llm.Temperature,
 		"system":      llm.getSystemMessage(messages),
+		"max_tokens":  512,
 	})
 	if err != nil {
 		return "", err
@@ -88,21 +93,21 @@ func (llm *Claude) completeChat(messages []model.Chat, retries int) (string, err
 		return "", err
 	}
 
-	choices := result["choices"].([]interface{})
-	if len(choices) == 0 {
-		return "", fmt.Errorf("no choices returned from API")
+	content := result["content"].([]interface{})
+	if len(content) == 0 {
+		return "", fmt.Errorf("no content returned from API")
 	}
 
-	message := choices[0].(map[string]interface{})["message"].(map[string]interface{})
+	message := content[0].(map[string]interface{})["text"].(string)
 
-	return message["content"].(string), nil
+	return message, nil
 }
 
-func (llm *Claude) getSystemMessage(messages []model.Chat) string {
+func (llm *Anthropic) getSystemMessage(messages []model.Chat) string {
 	return messages[0].Content
 }
 
-func (llm *Claude) getRetryDelay(errorResponse string) float64 {
+func (llm *Anthropic) getRetryDelay(errorResponse string) float64 {
 	re := regexp.MustCompile(`try again in (\d+\.?\d*)s`)
 	matches := re.FindStringSubmatch(errorResponse)
 	if len(matches) > 1 {

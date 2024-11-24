@@ -16,6 +16,11 @@ func NewHuman() *Human {
 	return &Human{}
 }
 
+
+func (llm *Human) Type() string {
+	return "human"
+}
+
 func (llm *Human) CompleteChat(messages []model.Chat) (string, error) {
 	fmt.Println("Enter your multi-line input (press Ctrl+D on Unix or Ctrl+Z on Windows when done):")
 

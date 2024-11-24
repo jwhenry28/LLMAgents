@@ -2,6 +2,7 @@ package scrapers
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 
 type Scraper interface {
 	Scrape()
+	SetTransport(http.RoundTripper)
 	GetURL() string
 	GetErr() error
 	GetStatusCode() int
@@ -45,8 +47,12 @@ func NewBaseScraper(urlString string) (BaseScraper, error) {
 	}, nil
 }
 
+func (s *BaseScraper) SetTransport(transport http.RoundTripper) {
+	s.Collector.WithTransport(transport)
+}
+
 func formatURL(url string) string {
-	if !strings.HasPrefix(url, "http") {
+	if !strings.HasPrefix(url, "http") && !strings.HasPrefix(url, "file://") {
 		url = "https://" + url
 	}
 
@@ -57,6 +63,10 @@ func formatURL(url string) string {
 
 func (s *BaseScraper) GetURL() string {
 	return s.URL.String()
+}
+
+func (s *BaseScraper) GetHostname() string {
+	return s.URL.Hostname()
 }
 
 func (s *BaseScraper) GetErr() error {

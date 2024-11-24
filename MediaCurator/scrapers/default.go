@@ -1,11 +1,14 @@
 package scrapers
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/gocolly/colly"
 	"github.com/jwhenry28/LLMAgents/media-curator/model"
+)
+
+const (
+	DEFAULT_FORMATTED_LEN = 5000
 )
 
 type DefaultScraper struct {
@@ -43,7 +46,6 @@ func (s *DefaultScraper) initialize() {
 		}
 		anchor := model.NewAnchor(e.Text, hyperlink)
 		s.Anchors = append(s.Anchors, anchor)
-		s.FullText += fmt.Sprintf("<a href=\"%s\">%s</a>", hyperlink, e.Text)
 	})
 	s.Collector.OnHTML("p,article,code,h1,h2,h3,h4,h5,h6", func(e *colly.HTMLElement) {
 		s.InnerText += e.Text
@@ -52,4 +54,12 @@ func (s *DefaultScraper) initialize() {
 	s.Collector.OnScraped(func(r *colly.Response) {
 		s.StatusCode = r.StatusCode
 	})
+}
+
+func (s *DefaultScraper) GetFormattedText() string {
+	truncated := s.FullText
+	if len(truncated) > DEFAULT_FORMATTED_LEN {
+		truncated = truncated[0:DEFAULT_FORMATTED_LEN]
+	}
+	return truncated
 }

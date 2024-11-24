@@ -14,7 +14,7 @@ type ChatConversation struct {
 	Base
 }
 
-func NewChatConversation(convoModel llm.LLM, initMessages []model.Chat, isOver func(Conversation) bool, toolInputType string) Conversation {
+func NewChatConversation(convoModel llm.LLM, initMessages []model.Chat, isOver func(Conversation) bool, toolInputType string, verbose bool) Conversation {
 	constructor := model.NewTextToolInput
 	if toolInputType == "json" {
 		constructor = model.NewJSONToolInput
@@ -25,14 +25,21 @@ func NewChatConversation(convoModel llm.LLM, initMessages []model.Chat, isOver f
 			isOver:           isOver,
 			Messages:         initMessages,
 			InputConstructor: constructor,
+			Verbose:          verbose,
 		},
 	}
 
 	for _, message := range c.Messages {
-		message.Print()
+		c.printMessage(message)
 	}
 
 	return &c
+}
+
+func (c *ChatConversation) printMessage(message model.Chat) {
+	if c.Verbose {
+		message.Print()
+	}
 }
 
 func (c *ChatConversation) RunConversation() {
@@ -52,13 +59,13 @@ func (c *ChatConversation) RunConversation() {
 		}
 
 		c.Messages = append(c.Messages, model.NewChat("assistant", response))
-		c.Messages[len(c.Messages)-1].Print()
+		c.printMessage(c.GetLastMessage())
 		if err == nil && c.isOver(c) {
 			break
 		}
-		
+
 		c.Messages = append(c.Messages, model.NewChat("user", output))
-		c.Messages[len(c.Messages)-1].Print()
+		c.printMessage(c.GetLastMessage())
 	}
 }
 

@@ -16,8 +16,13 @@ type Base struct {
 
 	Messages         []model.Chat
 	InputConstructor func(string) (model.ToolInput, error)
+	Verbose bool
 }
 
 func (b *Base) GetMessages() []model.Chat {
 	return b.Messages
+}
+
+func (b *Base) GetLastMessage() model.Chat {
+	return b.Messages[len(b.Messages)-1]
 }
