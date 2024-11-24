@@ -1,6 +1,7 @@
 package scrapers
 
 import (
+	"log/slog"
 	"net/url"
 
 	"github.com/gocolly/colly"
@@ -25,6 +26,14 @@ func NewHackerNewsScraper(urlString string) (Scraper, error) {
 }
 
 func (s *HackerNewsScraper) initialize() {
+	s.Collector.OnRequest(func(r *colly.Request) {
+		s.Err = nil
+	})
+	s.Collector.OnError(func(r *colly.Response, err error) {
+		slog.Warn("scraper error", "error", err)
+		s.StatusCode = r.StatusCode
+		s.Err = err
+	})
 	s.Collector.OnHTML("a", func(e *colly.HTMLElement) {
 		hyperlink := e.Attr("href")
 		if s.isExternalUrl(hyperlink) {
@@ -40,5 +49,15 @@ func (s *HackerNewsScraper) isExternalUrl(urlString string) bool {
 	}
 	hostRoot, _ := publicsuffix.EffectiveTLDPlusOne(s.URL.Hostname())
 	targetRoot, err := publicsuffix.EffectiveTLDPlusOne(url.Hostname())
-	return err == nil && hostRoot != targetRoot
+	return err == nil && hostRoot != targetRoot && targetRoot != "ycombinator.com" // TODO: remove me after flight
+}
+
+func (s *HackerNewsScraper) GetFormattedText() string {
+	formatted := ""
+	for _, anchor := range s.GetAnchors() {
+		formatted += "Title: " + anchor.Text + "\n"
+		formatted += "HRef: " + anchor.HRef + "\n\n"
+	}
+
+	return formatted
 }

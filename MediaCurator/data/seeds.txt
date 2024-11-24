@@ -1,2 +1,1 @@
-https://example.com
-https://news.ycombinator.com
+http://localhost/hackernews.html

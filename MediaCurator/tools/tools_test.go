@@ -21,25 +21,25 @@ func TestDecide(t *testing.T) {
 	}{
 		{
 			name:     "notify",
-			input:    genTextToolInput("decide NOTIFY https://example.com 'generic justification'"),
+			input:    genTextToolInput("decide NOTIFY example https://example.com 'generic justification'"),
 			expected: "notified",
 			match:    true,
 		},
 		{
 			name:     "ignore",
-			input:    genTextToolInput("decide IGNORE https://example.com 'generic justification'"),
+			input:    genTextToolInput("decide IGNORE example https://example.com 'generic justification'"),
 			expected: "ignored",
 			match:    true,
 		},
 		{
 			name:     "unknown decision",
-			input:    genTextToolInput("decide FOOBAR https://example.com 'generic justification'"),
+			input:    genTextToolInput("decide FOOBAR example https://example.com 'generic justification'"),
 			expected: "unknown decision",
 			match:    false,
 		},
 		{
 			name:     "missing justification",
-			input:    genTextToolInput("decide NOTIFY https://example.com"),
+			input:    genTextToolInput("decide NOTIFY example https://example.com"),
 			expected: "notified",
 			match:    false,
 		},

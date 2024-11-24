@@ -9,12 +9,13 @@ type Help struct {
 }
 
 func NewHelp(input model.ToolInput) Tool {
+	name := "help"
+	args := []string{"tool-name"}
 	brief := "help: returns information about supported tools. If no arguments are supplied, returns a list of all tool names. If a tool name is supplied as an argument, retrieved specific information about that tool."
-	usage := `usage: { "tool": "help", "args": [ <tool-name> ]}
-args: 
+	explanation := `args: 
 - tool-name: optional argument. if included, this specifies one tool to learn more about`
 	return Help{
-		Base: Base{Input: input, BriefText: brief, UsageText: usage},
+		Base: Base{Input: input, Name: name, Args: args, BriefText: brief, ExplanationText: explanation},
 	}
 }
 

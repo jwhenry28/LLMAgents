@@ -8,6 +8,7 @@ import (
 
 type Tool interface {
 	Brief() string
+	Usage() string
 	Help() string
 	Match() bool
 	Invoke() string

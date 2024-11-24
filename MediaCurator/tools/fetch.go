@@ -14,12 +14,13 @@ type Fetch struct {
 }
 
 func NewFetch(input model.ToolInput) tools.Tool {
-	brief := "fetch: fetches the content of the specified URL."
-	usage := `usage: { "tool": "fetch", "args": [ <url> ]}
-args:
+	name := "fetch"
+	args := []string{"url"}
+	brief := "fetch: fetches a preview (5000 chars) of the specified URL's content"
+	explanation := `args:
 - url: The URL you wish to fetch content from. Must start with http or https.`
 
-	return Fetch{Base: tools.Base{Input: input, BriefText: brief, UsageText: usage}}
+	return Fetch{Base: tools.Base{Input: input, Name: name, Args: args, BriefText: brief, ExplanationText: explanation}}
 }
 
 func (task Fetch) Match() bool {

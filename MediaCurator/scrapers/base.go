@@ -14,6 +14,7 @@ type Scraper interface {
 	Scrape()
 	SetTransport(http.RoundTripper)
 	GetURL() string
+	GetHostname() string
 	GetErr() error
 	GetStatusCode() int
 	GetAnchors() []model.Anchor

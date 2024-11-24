@@ -115,3 +115,16 @@ func (t TextToolInput) GetName() string {
 func (t TextToolInput) GetArgs() []string {
 	return t.Args
 }
+
+func (t TextToolInput) FormatUsage(argNames []string) string {
+	template := `usage: %s %s`
+	argString := ""
+	for i, arg := range argNames {
+		argString += fmt.Sprintf("<%s>", arg)
+		if i < len(argNames)-1 {
+			argString += " "
+		}
+	}
+
+	return fmt.Sprintf(template, t.Name, argString)
+}

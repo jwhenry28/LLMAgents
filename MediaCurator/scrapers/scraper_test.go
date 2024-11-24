@@ -22,14 +22,14 @@ func TestConstructors(t *testing.T) {
 		constructor    func(string) (Scraper, error)
 		url            string
 		anchors        []string
-		contentSnippet string
+		contentSnippets []string
 	}{
 		{
 			"DefaultScraper",
 			NewDefaultScraper,
 			"example.html",
 			[]string{"https://www.iana.org/domains/example"},
-			"This domain is for use in illustrative examples in documents.",
+			[]string{"This domain is for use in illustrative examples in documents."},
 		},
 		{
 			"HackerNewsScraper",
@@ -42,7 +42,13 @@ func TestConstructors(t *testing.T) {
 				"https://iximiuz.com/en/series/computer-networking-fundamentals/",
 				"https://github.com/ColleagueRiley/RGFW",
 			},
-			"",
+			[]string{
+				"Title: Writes Large Correct Programs (2008)",
+				"Title: MaXX Interactive Desktop -- the little brother of the great SGI Desktop on IRIX",
+				"Title: Baby’s Second Garbage Collector",
+				"Title: Marshall Brain has passed away",
+				"Title: Scientists Clone Two Black-Footed Ferrets from Frozen Tissues",
+			},
 		},
 	}
 
@@ -75,8 +81,12 @@ func TestConstructors(t *testing.T) {
 				}
 			}
 
-			if !strings.Contains(scraper.GetFormattedText(), test.contentSnippet) {
-				t.Errorf("failed to retrieve expected content.")
+			for _, expected := range test.contentSnippets {
+				actual := scraper.GetFormattedText()
+
+				if !strings.Contains(actual, expected) {
+					t.Fatalf("failed to retrieve content: %s\nActual:\n%s", expected, actual)
+				}
 			}
 		})
 	}

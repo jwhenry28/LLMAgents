@@ -205,8 +205,8 @@ func TestNewTextToolInput(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:  "empty input with spaces",
-			input: "     ",
+			name:     "empty input with spaces",
+			input:    "     ",
 			expected: nil,
 			wantErr:  true,
 		},
@@ -238,7 +238,7 @@ func TestNewTextToolInput(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:  "newline with quotes",
+			name: "newline with quotes",
 			input: `decide "this is a 'complex'
 "example with
 \"nested quotes\"
@@ -262,6 +262,73 @@ and a newline`},
 				return
 			} else if !test.wantErr && !reflect.DeepEqual(got, test.expected) {
 				t.Errorf("Expected\n%v\n\nbut got\n\n%v", test.expected.AsString(), got.AsString())
+			}
+		})
+	}
+}
+
+func TestNewToolInput(t *testing.T) {
+	tests := []struct {
+		name     string
+		toolType string
+		input    string
+		expected ToolInput
+		wantErr  bool
+	}{
+		{
+			name:     "valid json tool",
+			toolType: JSON_TOOL_TYPE,
+			input:    `{"tool": "decide", "args": ["hello", "world"]}`,
+			expected: &JSONToolInput{
+				Name: "decide",
+				Args: []string{"hello", "world"},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "valid text tool",
+			toolType: TEXT_TOOL_TYPE,
+			input:    `decide hello world`,
+			expected: &TextToolInput{
+				Name: "decide",
+				Args: []string{"hello", "world"},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "invalid tool type",
+			toolType: "invalid",
+			input:    "anything",
+			expected: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "invalid json input",
+			toolType: JSON_TOOL_TYPE,
+			input:    `{"tool": "decide"`, // malformed JSON
+			expected: nil,
+			wantErr:  true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := NewToolInput(test.toolType, test.input)
+
+			if test.wantErr {
+				if err == nil {
+					t.Errorf("NewToolInput() error = nil, wantErr %v", test.wantErr)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("NewToolInput() unexpected error = %v", err)
+				return
+			}
+
+			if !reflect.DeepEqual(got, test.expected) {
+				t.Errorf("NewToolInput() = %v, want %v", got, test.expected)
 			}
 		})
 	}

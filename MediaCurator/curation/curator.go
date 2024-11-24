@@ -22,17 +22,19 @@ import (
 const (
 	SEEDS_FILE       = "data/seeds.txt"
 	DESCRIPTION_FILE = "data/description.txt"
-	TOOL_TYPE        = "json"
+	TOOL_TYPE        = model.TEXT_TOOL_TYPE
 )
 
 type ScraperConstructor func(string) (scrapers.Scraper, error)
 
 var ScrapersRegistry = map[string]ScraperConstructor{
 	"news.ycombinator.com": scrapers.NewHackerNewsScraper,
+	"localhost":            scrapers.NewHackerNewsScraper,
 }
 
 type Result struct {
 	Decision      string
+	Title         string
 	URL           string
 	Justification string
 }
@@ -137,31 +139,39 @@ func (c *Curator) Curate() {
 
 func (c *Curator) runLLMSession(seed string) {
 	scraper := c.scrapeSeed(seed)
-	anchors := scraper.GetAnchors()
-	slog.Info("processing seed", "seed", seed, "anchors", len(anchors))
+	slog.Info("processing seed", "seed", seed, "anchors", len(scraper.GetAnchors()))
 
-	for _, anchor := range scraper.GetAnchors() {
-		messages, err := c.generateInitialMessages(anchor.HRef)
-		if err != nil {
-			slog.Warn("error getting sub-scraper", "error", err)
-			continue
-		}
-
-		decision, err := c.generateModelDecision(messages)
-		if err != nil {
-			slog.Warn("error parsing decision", "error", err)
-			continue
-		}
-
-		c.processDecision(decision)
+	messages, err := c.generateInitialMessages(scraper)
+	if err != nil {
+		slog.Warn("error getting sub-scraper", "error", err)
+		return
 	}
-	
+
+	messages, err = c.generateModelDecisions(messages)
+	if err != nil {
+		slog.Warn("error retrieving decisions", "error", err)
+		return
+	}
+
+	for _, message := range messages {
+		decision, err := model.NewToolInput(TOOL_TYPE, message.Content)
+		if err != nil {
+			slog.Warn("error processing chat", "message", message.Content)
+			continue
+		}
+
+		if decision.GetName() == "decide" {
+			c.processDecision(decision)
+
+		}
+	}
+
 	slog.Info("completed seed", "seed", seed)
 }
 
 func (c *Curator) processDecision(decision model.ToolInput) {
 	args := decision.GetArgs()
-	c.results = append(c.results, Result{Decision: args[0], URL: args[1], Justification: args[2]})
+	c.results = append(c.results, Result{Decision: args[0], Title: args[1], URL: args[2], Justification: args[3]})
 	c.saveResults()
 }
 
@@ -171,20 +181,21 @@ func (c *Curator) extractFinalTool(conversation conversation.Conversation) (mode
 	return model.NewJSONToolInput(lastMessage.Content)
 }
 
-func (c *Curator) generateModelDecision(messages []model.Chat) (model.ToolInput, error) {
+func (c *Curator) generateModelDecisions(messages []model.Chat) ([]model.Chat, error) {
 	conversationIsOver := func(conv conversation.Conversation) bool {
 		finalTool, err := c.extractFinalTool(conv)
 		if err != nil {
 			return false
 		}
 
-		decideConstructor, ok := tools.Registry["decide"]
-		return ok && finalTool.GetName() == "decide" && decideConstructor(finalTool).Match()
+		endToolName := "complete"
+		decideConstructor, ok := tools.Registry[endToolName]
+		return ok && finalTool.GetName() == endToolName && decideConstructor(finalTool).Match()
 	}
 
 	conversation := conversation.NewChatConversation(c.llm, messages, conversationIsOver, TOOL_TYPE, true)
 	conversation.RunConversation()
-	return c.extractFinalTool(conversation)
+	return conversation.GetMessages(), nil
 }
 
 func (c *Curator) saveResults() {
@@ -255,14 +266,8 @@ func (c *Curator) scrapeSeed(seed string) scrapers.Scraper {
 	return scraper
 }
 
-func (c *Curator) generateInitialMessages(href string) ([]model.Chat, error) {
-	subScraper, err := c.getOrCreateScraper(href)
-	if err != nil {
-		return nil, err
-	}
-
-	subScraper.Scrape()
-	return c.formatInitialMessages(subScraper), nil
+func (c *Curator) generateInitialMessages(scraper scrapers.Scraper) ([]model.Chat, error) {
+	return c.formatInitialMessages(scraper), nil
 
 }
 
@@ -273,9 +278,10 @@ func (c *Curator) formatInitialMessages(scraper scrapers.Scraper) []model.Chat {
 			Content: fmt.Sprintf(
 				utils.SYSTEM_PROMPT,
 				c.getDescription(),
+				c.getToolList(),
 				local.NewDecide(model.JSONToolInput{}).Help(),
-				tools.NewHelp(model.JSONToolInput{Name: "help", Args: []string{}}).Invoke(),
-				utils.JSON_TOOL_FORMAT,
+				local.NewComplete(model.JSONToolInput{}).Help(),
+				model.JSON_FORMAT_MSG,
 			),
 		},
 		{
@@ -283,6 +289,10 @@ func (c *Curator) formatInitialMessages(scraper scrapers.Scraper) []model.Chat {
 			Content: fmt.Sprintf(utils.CONTENT_PROMPT, scraper.GetURL(), scraper.GetFormattedText()),
 		},
 	}
+}
+
+func (c *Curator) getToolList() string {
+	return tools.NewHelp(model.JSONToolInput{Name: "help", Args: []string{}}).Invoke()
 }
 
 func (c *Curator) getDescription() string {

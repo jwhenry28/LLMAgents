@@ -1,6 +1,9 @@
 package model
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type JSONToolInput struct {
 	Name string   `json:"tool"`
@@ -27,4 +30,17 @@ func (t JSONToolInput) GetName() string {
 
 func (t JSONToolInput) GetArgs() []string {
 	return t.Args
+}
+
+func (t JSONToolInput) FormatUsage(argNames []string) string {
+	template := `usage: { "tool": "%s", "args": [ %s ]}`
+	argString := ""
+	for i, arg := range argNames {
+		argString += fmt.Sprintf("<%s>", arg)
+		if i < len(argNames)-1 {
+			argString += ", "
+		}
+	}
+
+	return fmt.Sprintf(template, t.Name, argString)
 }
