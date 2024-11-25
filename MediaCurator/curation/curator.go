@@ -22,7 +22,7 @@ import (
 const (
 	SEEDS_FILE       = "data/seeds.txt"
 	DESCRIPTION_FILE = "data/description.txt"
-	TOOL_TYPE        = model.TEXT_TOOL_TYPE
+	TOOL_TYPE        = model.JSON_TOOL_TYPE
 )
 
 type ScraperConstructor func(string) (scrapers.Scraper, error)
@@ -32,17 +32,10 @@ var ScrapersRegistry = map[string]ScraperConstructor{
 	"localhost":            scrapers.NewHackerNewsScraper,
 }
 
-type Result struct {
-	Decision      string
-	Title         string
-	URL           string
-	Justification string
-}
-
 type Curator struct {
 	fm        utils.FileManager
 	seeds     []string
-	results   []Result
+	decisions   []local.Decision
 	scrapers  map[string]scrapers.Scraper
 	llm       llm.LLM
 	recipient string
@@ -58,7 +51,7 @@ func NewCurator(llm llm.LLM, recipient string) *Curator {
 	c := Curator{
 		fm:        utils.NewFileManager(),
 		llm:       llm,
-		results:   []Result{},
+		decisions:   []local.Decision{},
 		recipient: recipient,
 	}
 
@@ -71,7 +64,8 @@ func NewCurator(llm llm.LLM, recipient string) *Curator {
 func (c *Curator) registerTools() {
 	tools.RegisterTool("help", tools.NewHelp)
 	tools.RegisterTool("fetch", local.NewFetch)
-	tools.RegisterTool("decide", local.NewDecide)
+	// tools.RegisterTool("decide", local.NewDecide)
+	tools.RegisterTool("complete", local.NewComplete)
 }
 
 func (c *Curator) loadSeeds() {
@@ -147,41 +141,42 @@ func (c *Curator) runLLMSession(seed string) {
 		return
 	}
 
-	messages, err = c.generateModelDecisions(messages)
+	lastMsg, err := c.generateModelDecisions(messages)
 	if err != nil {
-		slog.Warn("error retrieving decisions", "error", err)
+		slog.Error("error retrieving decisions", "error", err)
 		return
 	}
 
-	for _, message := range messages {
-		decision, err := model.NewToolInput(TOOL_TYPE, message.Content)
-		if err != nil {
-			slog.Warn("error processing chat", "message", message.Content)
-			continue
-		}
-
-		if decision.GetName() == "decide" {
-			c.processDecision(decision)
-
-		}
+	decisions, err := model.NewToolInput(TOOL_TYPE, lastMsg.Content)
+	if err != nil {
+		slog.Error("error parsing decision", "error", err)
+		return
 	}
 
+	c.processDecision(decisions)
 	slog.Info("completed seed", "seed", seed)
 }
 
-func (c *Curator) processDecision(decision model.ToolInput) {
-	args := decision.GetArgs()
-	c.results = append(c.results, Result{Decision: args[0], Title: args[1], URL: args[2], Justification: args[3]})
+func (c *Curator) processDecision(decisions model.ToolInput) {
+	for _, arg := range decisions.GetArgs() {
+		var decision local.Decision
+		err := json.Unmarshal([]byte(arg), &decision) 
+		if err != nil {
+			slog.Warn("error unmarshaling decision", "decision", arg, "error", err)
+			continue
+		}
+
+		c.decisions = append(c.decisions, decision)
+	}
 	c.saveResults()
 }
 
 func (c *Curator) extractFinalTool(conversation conversation.Conversation) (model.ToolInput, error) {
-	messages := conversation.GetMessages()
-	lastMessage := messages[len(messages)-1]
+	lastMessage := conversation.GetLastMessage()
 	return model.NewJSONToolInput(lastMessage.Content)
 }
 
-func (c *Curator) generateModelDecisions(messages []model.Chat) ([]model.Chat, error) {
+func (c *Curator) generateModelDecisions(messages []model.Chat) (model.Chat, error) {
 	conversationIsOver := func(conv conversation.Conversation) bool {
 		finalTool, err := c.extractFinalTool(conv)
 		if err != nil {
@@ -190,16 +185,16 @@ func (c *Curator) generateModelDecisions(messages []model.Chat) ([]model.Chat, e
 
 		endToolName := "complete"
 		decideConstructor, ok := tools.Registry[endToolName]
-		return ok && finalTool.GetName() == endToolName && decideConstructor(finalTool).Match()
+		return ok && finalTool.GetName() == endToolName && decideConstructor(finalTool).Invoke() == "completed"
 	}
 
 	conversation := conversation.NewChatConversation(c.llm, messages, conversationIsOver, TOOL_TYPE, true)
 	conversation.RunConversation()
-	return conversation.GetMessages(), nil
+	return conversation.GetLastMessage(), nil
 }
 
 func (c *Curator) saveResults() {
-	resultsJson, err := json.Marshal(c.results)
+	resultsJson, err := json.Marshal(c.decisions)
 	if err != nil {
 		slog.Error("Error marshaling results", "error", err)
 		return
@@ -248,7 +243,7 @@ func (c *Curator) buildEmail() string {
 
 func (c *Curator) getPickedArticles() []string {
 	articles := []string{}
-	for _, result := range c.results {
+	for _, result := range c.decisions {
 		if result.Decision == "NOTIFY" {
 			articles = append(articles, result.URL)
 		}
@@ -272,6 +267,7 @@ func (c *Curator) generateInitialMessages(scraper scrapers.Scraper) ([]model.Cha
 }
 
 func (c *Curator) formatInitialMessages(scraper scrapers.Scraper) []model.Chat {
+	dummy, _ := model.NewToolInput(TOOL_TYPE, "")
 	return []model.Chat{
 		{
 			Role: "system",
@@ -279,9 +275,8 @@ func (c *Curator) formatInitialMessages(scraper scrapers.Scraper) []model.Chat {
 				utils.SYSTEM_PROMPT,
 				c.getDescription(),
 				c.getToolList(),
-				local.NewDecide(model.JSONToolInput{}).Help(),
-				local.NewComplete(model.JSONToolInput{}).Help(),
-				model.JSON_FORMAT_MSG,
+				local.NewComplete(dummy).Help(),
+				model.JSON_FORMAT_MSG, //TODO: encapsulate this with TOOL_TYPE
 			),
 		},
 		{

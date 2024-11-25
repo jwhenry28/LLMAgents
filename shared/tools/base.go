@@ -1,6 +1,10 @@
 package tools
 
-import "github.com/jwhenry28/LLMAgents/shared/model"
+import (
+	"fmt"
+
+	"github.com/jwhenry28/LLMAgents/shared/model"
+)
 
 type Base struct {
 	Input           model.ToolInput
@@ -15,7 +19,7 @@ func (task Base) Brief() string {
 }
 
 func (task Base) Usage() string {
-	return task.Input.FormatUsage(task.Args)
+	return task.Input.FormatUsage(task.Name, task.Args)
 }
 
 func (task Base) Explanation() string {
@@ -23,7 +27,7 @@ func (task Base) Explanation() string {
 }
 
 func (task Base) Help() string {
-	msg := task.Brief() + "\n" + task.Usage()
+	msg := fmt.Sprintf("%s: %s\n%s", task.Name, task.Brief(), task.Usage())
 	if task.ExplanationText != "" {
 		msg += "\n" + task.ExplanationText
 	}

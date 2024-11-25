@@ -8,6 +8,7 @@ import (
 type Conversation interface {
 	RunConversation()
 	GetMessages() []model.Chat
+	GetLastMessage() model.Chat
 }
 
 type Base struct {

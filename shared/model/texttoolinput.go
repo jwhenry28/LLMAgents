@@ -21,12 +21,12 @@ func NewTextToolInput(response string) (ToolInput, error) {
 func handleMultiline(response string) (ToolInput, error) {
 	lines := strings.SplitN(response, "\n", 2)
 	if len(lines) == 0 {
-		return nil, fmt.Errorf("invalid response format")
+		return &TextToolInput{}, fmt.Errorf("invalid response format")
 	}
 
 	firstLine := parseCommandLine(lines[0])
 	if len(firstLine) == 0 {
-		return nil, fmt.Errorf("invalid response format") 
+		return &TextToolInput{}, fmt.Errorf("invalid response format") 
 	}
 
 	name := firstLine[0]
@@ -50,7 +50,7 @@ func handleMultiline(response string) (ToolInput, error) {
 func handleSingleLine(response string) (ToolInput, error) {
 	parsedArgs := parseCommandLine(response)
 	if len(parsedArgs) == 0 {
-		return nil, fmt.Errorf("invalid response format")
+		return &TextToolInput{}, fmt.Errorf("invalid response format")
 	}
 	name := parsedArgs[0]
 	args := []string{}
@@ -116,7 +116,7 @@ func (t TextToolInput) GetArgs() []string {
 	return t.Args
 }
 
-func (t TextToolInput) FormatUsage(argNames []string) string {
+func (t TextToolInput) FormatUsage(name string, argNames []string) string {
 	template := `usage: %s %s`
 	argString := ""
 	for i, arg := range argNames {
@@ -126,5 +126,5 @@ func (t TextToolInput) FormatUsage(argNames []string) string {
 		}
 	}
 
-	return fmt.Sprintf(template, t.Name, argString)
+	return fmt.Sprintf(template, name, argString)
 }

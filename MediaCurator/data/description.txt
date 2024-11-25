@@ -5,3 +5,7 @@ I want to build products that give people more power over their lives.
 I am not particularly interested in general hype around machine learning, AI, or 
 LLMs. I am especially interested in specific tools and techniques that make it 
 easier for people to process data, make decisions, and organize information.
+
+Please only send me articles about tools or techniques that directly leverage LLMs. I 
+am not interested in articles about tools or techniques that, while useful to 
+data processing or decision-making generally, do not leverage LLMs.

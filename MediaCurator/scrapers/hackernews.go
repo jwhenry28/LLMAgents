@@ -49,7 +49,7 @@ func (s *HackerNewsScraper) isExternalUrl(urlString string) bool {
 	}
 	hostRoot, _ := publicsuffix.EffectiveTLDPlusOne(s.URL.Hostname())
 	targetRoot, err := publicsuffix.EffectiveTLDPlusOne(url.Hostname())
-	return err == nil && hostRoot != targetRoot && targetRoot != "ycombinator.com" // TODO: remove me after flight
+	return err == nil && hostRoot != targetRoot
 }
 
 func (s *HackerNewsScraper) GetFormattedText() string {

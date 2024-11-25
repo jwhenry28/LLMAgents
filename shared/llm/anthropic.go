@@ -46,7 +46,7 @@ func (llm *Anthropic) completeChat(messages []model.Chat, retries int) (string, 
 		"messages":    messages[1:],
 		"temperature": llm.Temperature,
 		"system":      llm.getSystemMessage(messages),
-		"max_tokens":  512,
+		"max_tokens":  8192,
 	})
 	if err != nil {
 		return "", err

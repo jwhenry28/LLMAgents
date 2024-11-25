@@ -10,6 +10,7 @@ type JSONToolInput struct {
 	Args []string `json:"args"`
 }
 
+
 func NewJSONToolInput(response string) (ToolInput, error) {
 	var input JSONToolInput
 	err := json.Unmarshal([]byte(response), &input)
@@ -32,7 +33,7 @@ func (t JSONToolInput) GetArgs() []string {
 	return t.Args
 }
 
-func (t JSONToolInput) FormatUsage(argNames []string) string {
+func (t JSONToolInput) FormatUsage(name string, argNames []string) string {
 	template := `usage: { "tool": "%s", "args": [ %s ]}`
 	argString := ""
 	for i, arg := range argNames {
@@ -42,5 +43,5 @@ func (t JSONToolInput) FormatUsage(argNames []string) string {
 		}
 	}
 
-	return fmt.Sprintf(template, t.Name, argString)
+	return fmt.Sprintf(template, name, argString)
 }

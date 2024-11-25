@@ -19,11 +19,7 @@ To avoid unnecessary API charges, please do not use 'fetch' against every articl
 against articles that seem like they could be useful, but you cannot make a final decision based on
 the title alone.
 
-For each included article, make a decision by running the "decide" tool, 
-like so:
-%s
-
-When you have finished analyzing each article, end your conversation with the "complete" tool:
+When you have finished analyzing each article, report your decisions with the "complete" tool:
 %s
 
 %s
