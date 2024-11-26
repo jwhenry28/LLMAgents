@@ -7,23 +7,24 @@ import (
 	"github.com/jwhenry28/LLMAgents/media-curator/model"
 )
 
-type HackerNewsScraper struct {
+type NautilusScraper struct {
 	BaseScraper
 }
 
-func NewHackerNewsScraper(urlString string) (Scraper, error) {
+func NewNautilusScraper(urlString string) (Scraper, error) {
 	baseScraper, err := NewBaseScraper(urlString)
 	if err != nil {
 		return nil, err
 	}
-	s := HackerNewsScraper{
+	s := NautilusScraper{
 		BaseScraper: baseScraper,
 	}
 	s.initialize()
 	return &s, nil
 }
 
-func (s *HackerNewsScraper) initialize() {
+func (s *NautilusScraper) initialize() {
+	seen := make(map[string]bool)
 	s.collector.OnRequest(func(r *colly.Request) {
 		s.Err = nil
 	})
@@ -32,15 +33,19 @@ func (s *HackerNewsScraper) initialize() {
 		s.StatusCode = r.StatusCode
 		s.Err = err
 	})
-	s.collector.OnHTML("a", func(e *colly.HTMLElement) {
-		hyperlink := e.Attr("href")
-		if s.isExternalUrl(hyperlink) {
-			s.Anchors = append(s.Anchors, model.NewAnchor(e.Text, hyperlink))
+	s.collector.OnHTML("div.article-box", func(e *colly.HTMLElement) {
+		title := e.ChildText("h3 a")
+		hyperlink := e.ChildAttr("h3 a", "href")
+
+		_, ok := seen[hyperlink]
+		if !ok && s.isInternalUrl(hyperlink) {
+			s.Anchors = append(s.Anchors, model.NewAnchor(title, hyperlink))
+			seen[hyperlink] = true
 		}
 	})
 }
 
-func (s *HackerNewsScraper) GetFormattedText() string {
+func (s *NautilusScraper) GetFormattedText() string {
 	formatted := ""
 	for _, anchor := range s.GetAnchors() {
 		formatted += "Title: " + anchor.Text + "\n"

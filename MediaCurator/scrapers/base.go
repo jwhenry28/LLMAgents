@@ -1,13 +1,13 @@
 package scrapers
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/gocolly/colly"
 	"github.com/jwhenry28/LLMAgents/media-curator/model"
+	"golang.org/x/net/publicsuffix"
 )
 
 type Scraper interface {
@@ -18,20 +18,18 @@ type Scraper interface {
 	GetErr() error
 	GetStatusCode() int
 	GetAnchors() []model.Anchor
-	GetFormattedAnchors() string
-	GetInnerText() string
 	GetFormattedText() string
 }
 
 type BaseScraper struct {
-	URL        *url.URL
 	Anchors    []model.Anchor
 	InnerText  string
 	FullText   string
 	Err        error
 	StatusCode int
 
-	Collector *colly.Collector
+	collector *colly.Collector
+	url       *url.URL
 }
 
 func NewBaseScraper(urlString string) (BaseScraper, error) {
@@ -41,15 +39,14 @@ func NewBaseScraper(urlString string) (BaseScraper, error) {
 	}
 
 	return BaseScraper{
-		URL:       url,
 		Anchors:   []model.Anchor{},
-		InnerText: "",
-		Collector: colly.NewCollector(),
+		collector: colly.NewCollector(),
+		url:       url,
 	}, nil
 }
 
 func (s *BaseScraper) SetTransport(transport http.RoundTripper) {
-	s.Collector.WithTransport(transport)
+	s.collector.WithTransport(transport)
 }
 
 func formatURL(url string) string {
@@ -63,11 +60,11 @@ func formatURL(url string) string {
 }
 
 func (s *BaseScraper) GetURL() string {
-	return s.URL.String()
+	return s.url.Scheme + "://" + s.url.Hostname() + s.url.Path
 }
 
 func (s *BaseScraper) GetHostname() string {
-	return s.URL.Hostname()
+	return s.url.Hostname()
 }
 
 func (s *BaseScraper) GetErr() error {
@@ -82,8 +79,8 @@ func (s *BaseScraper) Scrape() {
 	s.FullText = ""
 	s.InnerText = ""
 	s.Anchors = []model.Anchor{}
-	s.Collector.Visit(s.GetURL())
-	s.Collector.Wait()
+	s.collector.Visit(s.GetURL())
+	s.collector.Wait()
 }
 
 func (s *BaseScraper) GetAnchors() []model.Anchor {
@@ -100,18 +97,26 @@ func (s *BaseScraper) GetAnchors() []model.Anchor {
 	return unique
 }
 
-func (s *BaseScraper) GetFormattedAnchors() string {
-	bytes, err := json.Marshal(s.Anchors)
-	if err != nil {
-		return "[]"
-	}
-	return string(bytes)
-}
-
-func (s *BaseScraper) GetInnerText() string {
-	return s.InnerText
-}
-
 func (s *BaseScraper) GetFormattedText() string {
 	return s.FullText
+}
+
+func (s *BaseScraper) isExternalUrl(urlString string) bool {
+	url, err := url.ParseRequestURI(urlString)
+	if err != nil {
+		return false
+	}
+	hostRoot, _ := publicsuffix.EffectiveTLDPlusOne(s.url.Hostname())
+	targetRoot, err := publicsuffix.EffectiveTLDPlusOne(url.Hostname())
+	return err == nil && hostRoot != targetRoot
+}
+
+func (s *BaseScraper) isInternalUrl(urlString string) bool {
+	url, err := url.ParseRequestURI(urlString)
+	if err != nil {
+		return false
+	}
+	hostRoot, _ := publicsuffix.EffectiveTLDPlusOne(s.url.Hostname())
+	targetRoot, err := publicsuffix.EffectiveTLDPlusOne(url.Hostname())
+	return err == nil && hostRoot == targetRoot
 }

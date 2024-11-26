@@ -28,14 +28,14 @@ func NewDefaultScraper(urlString string) (Scraper, error) {
 }
 
 func (s *DefaultScraper) initialize() {
-	s.Collector.OnRequest(func(r *colly.Request) {
+	s.collector.OnRequest(func(r *colly.Request) {
 		s.Err = nil
 	})
-	s.Collector.OnError(func(r *colly.Response, err error) {
+	s.collector.OnError(func(r *colly.Response, err error) {
 		s.StatusCode = r.StatusCode
 		s.Err = err
 	})
-	s.Collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
+	s.collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		hyperlink := e.Attr("href")
 		if !strings.HasPrefix(hyperlink, "http") {
 			url := s.GetURL()
@@ -47,11 +47,11 @@ func (s *DefaultScraper) initialize() {
 		anchor := model.NewAnchor(e.Text, hyperlink)
 		s.Anchors = append(s.Anchors, anchor)
 	})
-	s.Collector.OnHTML("p,article,code,h1,h2,h3,h4,h5,h6", func(e *colly.HTMLElement) {
+	s.collector.OnHTML("p,article,code,h1,h2,h3,h4,h5,h6", func(e *colly.HTMLElement) {
 		s.InnerText += e.Text
 		s.FullText += e.Text
 	})
-	s.Collector.OnScraped(func(r *colly.Response) {
+	s.collector.OnScraped(func(r *colly.Response) {
 		s.StatusCode = r.StatusCode
 	})
 }

@@ -29,13 +29,14 @@ type ScraperConstructor func(string) (scrapers.Scraper, error)
 
 var ScrapersRegistry = map[string]ScraperConstructor{
 	"news.ycombinator.com": scrapers.NewHackerNewsScraper,
-	"localhost":            scrapers.NewHackerNewsScraper,
+	"arxiv.org":            scrapers.NewArxivScraper,
+	"nautil.us":            scrapers.NewNautilusScraper,
 }
 
 type Curator struct {
 	fm        utils.FileManager
 	seeds     []string
-	decisions   []local.Decision
+	decisions []local.Decision
 	scrapers  map[string]scrapers.Scraper
 	llm       llm.LLM
 	recipient string
@@ -51,13 +52,15 @@ func NewCurator(llm llm.LLM, recipient string) *Curator {
 	c := Curator{
 		fm:        utils.NewFileManager(),
 		llm:       llm,
-		decisions:   []local.Decision{},
+		decisions: []local.Decision{},
 		recipient: recipient,
 	}
 
 	c.registerTools()
 	c.loadSeeds()
 	c.loadScrapers()
+
+	slog.Info("curator created", "llm", c.llm.Type(), "recipient", c.recipient, "seed count", len(c.seeds))
 	return &c
 }
 
@@ -160,7 +163,7 @@ func (c *Curator) runLLMSession(seed string) {
 func (c *Curator) processDecision(decisions model.ToolInput) {
 	for _, arg := range decisions.GetArgs() {
 		var decision local.Decision
-		err := json.Unmarshal([]byte(arg), &decision) 
+		err := json.Unmarshal([]byte(arg), &decision)
 		if err != nil {
 			slog.Warn("error unmarshaling decision", "decision", arg, "error", err)
 			continue
@@ -194,7 +197,13 @@ func (c *Curator) generateModelDecisions(messages []model.Chat) (model.Chat, err
 }
 
 func (c *Curator) saveResults() {
-	resultsJson, err := json.Marshal(c.decisions)
+	results := map[string]interface{}{
+		"recipient":   c.recipient,
+		"description": c.getDescription(),
+		"seeds":       c.seeds,
+		"decisions":   c.decisions,
+	}
+	resultsJson, err := json.Marshal(results)
 	if err != nil {
 		slog.Error("Error marshaling results", "error", err)
 		return
@@ -218,14 +227,14 @@ func (c *Curator) saveResults() {
 }
 
 func (c *Curator) sendResultsEmail() {
-	mailer, err := utils.NewEmailSender("joseph@hackandpray.com")
+	mailer, err := utils.NewEmailSender(c.llm.Type() + "@hackandpray.com")
 	if err != nil {
 		slog.Error("Error creating email sender", "error", err)
 		return
 	}
 
 	body := c.buildEmail()
-	mailer.SendEmail("joseph@hackandpray.com", "Media Curator Results", body)
+	mailer.SendEmail(c.recipient, "Media Curator Results", body)
 }
 
 func (c *Curator) buildEmail() string {
@@ -245,7 +254,7 @@ func (c *Curator) getPickedArticles() []string {
 	articles := []string{}
 	for _, result := range c.decisions {
 		if result.Decision == "NOTIFY" {
-			articles = append(articles, result.URL)
+			articles = append(articles, fmt.Sprintf("<a href=\"%s\">%s</a>", result.URL, result.Title))
 		}
 	}
 
