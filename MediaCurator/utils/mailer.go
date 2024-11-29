@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"strings"
 
 	"context"
 
@@ -10,9 +11,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ses/types"
 )
 
+type SESClient interface {
+	SendEmail(ctx context.Context, params *ses.SendEmailInput, optFns ...func(*ses.Options)) (*ses.SendEmailOutput, error)
+}
+
 type Mailer struct {
 	from      string
-	sesClient *ses.Client
+	sesClient SESClient
 }
 
 func NewEmailSender(from string) (*Mailer, error) {
@@ -32,6 +37,7 @@ func NewEmailSender(from string) (*Mailer, error) {
 }
 
 func (m *Mailer) SendEmail(to, subject, body string) error {
+	formatted := m.formatBody(body)
 	input := &ses.SendEmailInput{
 		Destination: &types.Destination{
 			ToAddresses: []string{
@@ -40,6 +46,9 @@ func (m *Mailer) SendEmail(to, subject, body string) error {
 		},
 		Message: &types.Message{
 			Body: &types.Body{
+				Html: &types.Content{
+					Data: &formatted,
+				},
 				Text: &types.Content{
 					Data: &body,
 				},
@@ -57,4 +66,10 @@ func (m *Mailer) SendEmail(to, subject, body string) error {
 	}
 
 	return nil
+}
+
+func (m *Mailer) formatBody(body string) string {
+	formatted := strings.ReplaceAll(body, "\n", "<br>")
+
+	return formatted
 }

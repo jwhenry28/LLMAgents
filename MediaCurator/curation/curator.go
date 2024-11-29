@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net/mail"
 	"net/url"
 	"os"
 	"strings"
 	"time"
 
+	localmodel "github.com/jwhenry28/LLMAgents/media-curator/model"
 	"github.com/jwhenry28/LLMAgents/media-curator/scrapers"
 	local "github.com/jwhenry28/LLMAgents/media-curator/tools"
 	"github.com/jwhenry28/LLMAgents/media-curator/utils"
@@ -31,6 +31,7 @@ var ScrapersRegistry = map[string]ScraperConstructor{
 	"news.ycombinator.com": scrapers.NewHackerNewsScraper,
 	"arxiv.org":            scrapers.NewArxivScraper,
 	"nautil.us":            scrapers.NewNautilusScraper,
+	"medium.com":           scrapers.NewMediumScraper,
 }
 
 type Curator struct {
@@ -38,36 +39,34 @@ type Curator struct {
 	seeds     []string
 	decisions []local.Decision
 	scrapers  map[string]scrapers.Scraper
+	profile   *localmodel.Profile
 	llm       llm.LLM
-	recipient string
+	sendEmail bool
 	filename  string
 }
 
-func NewCurator(llm llm.LLM, recipient string) *Curator {
-	_, err := mail.ParseAddress(recipient)
-	if recipient != "" && err != nil {
-		slog.Warn("invalid email address, ignoring", "address", recipient)
-		recipient = ""
-	}
+func NewCurator(llm llm.LLM, profile *localmodel.Profile) *Curator {
 	c := Curator{
 		fm:        utils.NewFileManager(),
 		llm:       llm,
 		decisions: []local.Decision{},
-		recipient: recipient,
+		profile:   profile,
 	}
 
 	c.registerTools()
 	c.loadSeeds()
 	c.loadScrapers()
 
-	slog.Info("curator created", "llm", c.llm.Type(), "recipient", c.recipient, "seed count", len(c.seeds))
 	return &c
+}
+
+func (c *Curator) SetSendEmail(sendEmail bool) {
+	c.sendEmail = sendEmail
 }
 
 func (c *Curator) registerTools() {
 	tools.RegisterTool("help", tools.NewHelp)
 	tools.RegisterTool("fetch", local.NewFetch)
-	// tools.RegisterTool("decide", local.NewDecide)
 	tools.RegisterTool("complete", local.NewComplete)
 }
 
@@ -124,12 +123,21 @@ func (c *Curator) formatSeed(seed string) string {
 	return u.Hostname()
 }
 
+func (c *Curator) GetRecipientEmail() string {
+	return c.profile.Email
+}
+
+func (c *Curator) GetRecipientName() string {
+	return c.profile.Name
+}
+
 func (c *Curator) Curate() {
+	slog.Info("curating for profile", "email", c.GetRecipientEmail(), "name", c.GetRecipientName())
 	for _, seed := range c.seeds {
 		c.runLLMSession(seed)
 	}
 
-	if c.recipient != "" {
+	if c.GetRecipientEmail() != "" && c.sendEmail {
 		c.sendResultsEmail()
 	}
 }
@@ -198,8 +206,8 @@ func (c *Curator) generateModelDecisions(messages []model.Chat) (model.Chat, err
 
 func (c *Curator) saveResults() {
 	results := map[string]interface{}{
-		"recipient":   c.recipient,
-		"description": c.getDescription(),
+		"recipient":   c.GetRecipientEmail(),
+		"description": c.GetDescription(),
 		"seeds":       c.seeds,
 		"decisions":   c.decisions,
 	}
@@ -217,7 +225,7 @@ func (c *Curator) saveResults() {
 	}
 
 	if c.filename == "" {
-		c.filename = fmt.Sprintf("%s_%s.json", c.llm.Type(), time.Now().Format(time.TimeOnly))
+		c.filename = fmt.Sprintf("%s_%s_%s.json", c.llm.Type(), c.GetRecipientName(), time.Now().Format(time.TimeOnly))
 	}
 	err = os.WriteFile(fmt.Sprintf("%s/%s", dataFolder, c.filename), resultsJson, 0644)
 	if err != nil {
@@ -234,7 +242,10 @@ func (c *Curator) sendResultsEmail() {
 	}
 
 	body := c.buildEmail()
-	mailer.SendEmail(c.recipient, "Media Curator Results", body)
+	err = mailer.SendEmail(c.GetRecipientEmail(), "Media Curator Results", body)
+	if err != nil {
+		slog.Error("Error sending email", "error", err)
+	}
 }
 
 func (c *Curator) buildEmail() string {
@@ -282,7 +293,7 @@ func (c *Curator) formatInitialMessages(scraper scrapers.Scraper) []model.Chat {
 			Role: "system",
 			Content: fmt.Sprintf(
 				utils.SYSTEM_PROMPT,
-				c.getDescription(),
+				c.GetDescription(),
 				c.getToolList(),
 				local.NewComplete(dummy).Help(),
 				model.JSON_FORMAT_MSG, //TODO: encapsulate this with TOOL_TYPE
@@ -299,6 +310,6 @@ func (c *Curator) getToolList() string {
 	return tools.NewHelp(model.JSONToolInput{Name: "help", Args: []string{}}).Invoke()
 }
 
-func (c *Curator) getDescription() string {
-	return c.fm.Read(DESCRIPTION_FILE)
+func (c *Curator) GetDescription() string {
+	return c.profile.Interests
 }

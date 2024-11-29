@@ -112,11 +112,16 @@ func (s *BaseScraper) isExternalUrl(urlString string) bool {
 }
 
 func (s *BaseScraper) isInternalUrl(urlString string) bool {
+	if strings.HasPrefix(urlString, "/") {
+		return true
+	}
+
 	url, err := url.ParseRequestURI(urlString)
 	if err != nil {
 		return false
 	}
+
 	hostRoot, _ := publicsuffix.EffectiveTLDPlusOne(s.url.Hostname())
 	targetRoot, err := publicsuffix.EffectiveTLDPlusOne(url.Hostname())
-	return err == nil && hostRoot == targetRoot
+	return err == nil &&hostRoot == targetRoot
 }

@@ -83,6 +83,14 @@ func (llm *Anthropic) completeChat(messages []model.Chat, retries int) (string, 
 		return llm.completeChat(messages, retries-1)
 	}
 
+	if resp.StatusCode == 529 {
+		if retries <= 1 {
+			return "", fmt.Errorf("service overloaded")
+		}
+		time.Sleep(15 * time.Second)
+		return llm.completeChat(messages, retries-1)
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("API request failed with status code %d: %s", resp.StatusCode, string(body))
 	}
